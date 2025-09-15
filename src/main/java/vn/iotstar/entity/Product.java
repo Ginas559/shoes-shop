@@ -58,7 +58,7 @@ public class Product implements Serializable {
 	private String status;
 
 	// 1 - N: product_images
-	@OneToMany(mappedBy = "product")
+	@OneToMany(mappedBy = "product", fetch = FetchType.EAGER)
 	private List<ProductImage> images;
 
 	// 1 - N: product_variants
