@@ -14,12 +14,12 @@ public class SanPhamSize implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("maSp")
-    @JoinColumn(name = "MASP", nullable = false)
+    @JoinColumn(name = "MASP", nullable = false, columnDefinition = "varchar(50)")
     private SanPham sanPham;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("maSize")
-    @JoinColumn(name = "MASIZE", nullable = false)
+    @JoinColumn(name = "MASIZE", nullable = false, columnDefinition = "varchar(50)")
     private Size size;
 
     @Column(name = "SOLUONG")

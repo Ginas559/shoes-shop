@@ -16,7 +16,7 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 				value="123456" />
 			<property name="hibernate.show_sql" value="true" />
 			<property name="hibernate.format_sql" value="true" />
-			<property name="hibernate.hbm2ddl.auto" value="update" />
+			<property name="hibernate.hbm2ddl.auto" value="update"/>
 			<property name="hibernate.dialect"
 				value="org.hibernate.dialect.SQLServer2012Dialect" />
 		</properties>
