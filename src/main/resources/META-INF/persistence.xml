@@ -8,7 +8,7 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 	<persistence-unit name="dataSource">
 		<properties>
 			<property name="jakarta.persistence.jdbc.url"
-				value="jdbc:sqlserver://localhost:1433;databaseName=jpact5st7;encrypt=true;trustServerCertificate=true;" />
+				value="jdbc:sqlserver://localhost:1433;databaseName=shoesshop;encrypt=true;trustServerCertificate=true;" />
 			<property name="jakarta.persistence.jdbc.driver"
 				value="com.microsoft.sqlserver.jdbc.SQLServerDriver" />
 			<property name="jakarta.persistence.jdbc.user" value="sa" />
