@@ -11,12 +11,13 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+
 import vn.iotstar.entity.User;
 
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
 
+    private static final long serialVersionUID = 1L;
     private EntityManagerFactory emf;
 
     @Override
@@ -33,6 +34,7 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+
         String email = req.getParameter("email");
         String password = req.getParameter("password"); // TODO: hash nếu cần
 
@@ -40,10 +42,12 @@ public class LoginServlet extends HttpServlet {
 
         try {
             User user = em.createQuery(
-                "SELECT u FROM User u WHERE u.email = :email AND u.passwordHash = :password", User.class)
-                .setParameter("email", email)
-                .setParameter("password", password)
-                .getResultStream().findFirst().orElse(null);
+                    "SELECT u FROM User u WHERE u.email = :email AND u.passwordHash = :password", User.class)
+                    .setParameter("email", email)
+                    .setParameter("password", password)
+                    .getResultStream()
+                    .findFirst()
+                    .orElse(null);
 
             if (user != null) {
                 HttpSession session = req.getSession();
@@ -64,10 +68,12 @@ public class LoginServlet extends HttpServlet {
                         resp.sendRedirect(req.getContextPath() + "/home");
                         break;
                 }
+
             } else {
                 req.setAttribute("error", "Sai email hoặc mật khẩu!");
                 req.getRequestDispatcher("/WEB-INF/views/login.jsp").forward(req, resp);
             }
+
         } finally {
             em.close();
         }
