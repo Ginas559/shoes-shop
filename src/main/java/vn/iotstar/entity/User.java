@@ -1,123 +1,157 @@
+// path: src/main/java/vn/iotstar/entity/User.java
 package vn.iotstar.entity;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
-
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
+import java.math.BigDecimal;
+import java.text.Normalizer;
+import java.time.LocalDateTime;
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+/**
+ * User entity (18 fields) cho AUTH + SHOP:
+ * - Lưu JSON addresses (string) để tương thích SQLServer.
+ * - Tự gen slug + timestamps bằng @PrePersist/@PreUpdate.
+ */
 @Entity
-@Table(name = "users")
-@NamedQuery(name = "User.findAll", query = "SELECT u FROM User u")
-public class User implements Serializable {
-	private static final long serialVersionUID = 1L;
+@Table(
+    name = "users",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_users_slug",   columnNames = "slug"),
+        @UniqueConstraint(name = "uk_users_email",  columnNames = "email"),
+        @UniqueConstraint(name = "uk_users_phone",  columnNames = "phone"),
+        @UniqueConstraint(name = "uk_users_idcard", columnNames = "id_card")
+    }
+)
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class User {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	private Long id;
+    // 1) Id (PK, auto-generated)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@Column(name = "email", columnDefinition = "nvarchar(255) not null", unique = true)
-	private String email;
+    // 2) Firstname
+    @NotBlank @Size(max = 32)
+    @Column(nullable = false, length = 32)
+    private String firstname;
 
-	@Column(name = "password_hash", columnDefinition = "nvarchar(255) not null")
-	private String passwordHash;
+    // 3) Lastname
+    @NotBlank @Size(max = 32)
+    @Column(nullable = false, length = 32)
+    private String lastname;
 
-	@Column(name = "full_name", columnDefinition = "nvarchar(255)")
-	private String fullName;
+    // 4) Slug (auto-gen from firstname + lastname)
+    @NotBlank
+    @Size(max = 70)
+    @Column(nullable = false, length = 70)
+    private String slug;
 
-	@Column(name = "phone", columnDefinition = "nvarchar(255)")
-	private String phone;
+    // 5) ID card (nullable + unique)
+    @Size(max = 20)
+    @Column(name = "id_card", length = 20, unique = true)
+    private String idCard;
 
-	@Column(name = "role", columnDefinition = "nvarchar(255) not null")
-	private String role;
+    // 6) Email (unique)
+    @Email @NotBlank @Size(max = 120)
+    @Column(nullable = false, length = 120)
+    private String email;
 
-	@Column(name = "status", columnDefinition = "nvarchar(255)")
-	private String status;
+    // 7) Phone (unique)
+    @NotBlank @Size(max = 15)
+    @Column(nullable = false, length = 15)
+    private String phone;
 
-	@Temporal(TemporalType.TIMESTAMP)
-	@Column(name = "created_at")
-	private Date createdAt;
+    // 8) Email verified?
+    @Column(nullable = false, columnDefinition = "bit default 0")
+    private Boolean isEmailActive = false;
 
-	// 1 - N: user_addresses
-	@OneToMany(mappedBy = "user")
-	private List<UserAddress> userAddresses;
+    // 9) Phone verified?
+    @Column(nullable = false, columnDefinition = "bit default 0")
+    private Boolean isPhoneActive = false;
 
-	// 1 - N: shops (owner)
-	@OneToMany(mappedBy = "owner")
-	private List<Shop> shops;
+    // 10) Salt (for hashing)
+    @NotBlank
+    @Column(nullable = false)
+    private String salt;
 
-	// TODO (nhóm 2):
-	@OneToMany(mappedBy = "user")
-	private List<Cart> carts;
+    // 11) Hashed password (BCrypt)
+    @NotBlank
+    @Column(name = "hashed_password", nullable = false)
+    private String hashedPassword;
 
-	@OneToMany(mappedBy = "user")
-	private List<Order> orders;
+    // 12) Role: user/admin (default user)
+    public enum Role { USER, ADMIN }
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10, columnDefinition = "varchar(10) default 'USER'")
+    private Role role = Role.USER;
 
-	@OneToMany(mappedBy = "user")
-	private List<Favorite> favorites;
+    // 13) Addresses (JSON string, max ~2000 chars, limit 6 addresses do ở tầng service)
+    @Size(max = 2000)
+    @Column(length = 2000)
+    private String addresses = "[]";
 
-	@OneToMany(mappedBy = "user")
-	private List<ViewedProduct> viewedProducts;
+    // 14) Avatar path
+    @Size(max = 255)
+    @Column(length = 255)
+    private String avatar;
 
-	@OneToMany(mappedBy = "user")
-	private List<Review> reviews;
+    // 15) Cover path
+    @Size(max = 255)
+    @Column(length = 255)
+    private String cover;
 
-	@OneToMany(mappedBy = "shipper")
-	private List<ShipperAssignment> shipperAssignments;
+    // 16) Point (for user level)
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private Integer point = 0;
 
-	public User() {}
+    // 17) E-wallet balance
+    @Column(name = "e_wallet", precision = 18, scale = 2, nullable = false, columnDefinition = "decimal(18,2) default 0")
+    private BigDecimal eWallet = BigDecimal.ZERO;
 
-	public User(Long id, String email, String passwordHash, String fullName, String phone, String role, String status,
-			Date createdAt, List<UserAddress> userAddresses, List<Shop> shops, List<Cart> carts, List<Order> orders,
-			List<Favorite> favorites, List<ViewedProduct> viewedProducts, List<Review> reviews,
-			List<ShipperAssignment> shipperAssignments) {
-		super();
-		this.id = id;
-		this.email = email;
-		this.passwordHash = passwordHash;
-		this.fullName = fullName;
-		this.phone = phone;
-		this.role = role;
-		this.status = status;
-		this.createdAt = createdAt;
-		this.userAddresses = userAddresses;
-		this.shops = shops;
-		this.carts = carts;
-		this.orders = orders;
-		this.favorites = favorites;
-		this.viewedProducts = viewedProducts;
-		this.reviews = reviews;
-		this.shipperAssignments = shipperAssignments;
-	}
+    // 18) Audit timestamps
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
 
-	public Long getId() { return id; }
-	public void setId(Long id) { this.id = id; }
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
 
-	public String getEmail() { return email; }
-	public void setEmail(String email) { this.email = email; }
+    /*--- Lifecycle hooks ---*/
+    @PrePersist
+    private void prePersist() {
+        if (slug == null || slug.isBlank()) {
+            this.slug = toSlug(firstname + " " + lastname);
+        }
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
+        // Chuẩn hóa dữ liệu quan trọng
+        if (email != null) this.email = email.trim().toLowerCase(Locale.ROOT);
+        if (phone != null) this.phone = phone.trim();
+    }
 
-	public String getPasswordHash() { return passwordHash; }
-	public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    @PreUpdate
+    private void preUpdate() {
+        if (slug == null || slug.isBlank()) {
+            this.slug = toSlug(firstname + " " + lastname);
+        }
+        this.updatedAt = LocalDateTime.now();
+        if (email != null) this.email = email.trim().toLowerCase(Locale.ROOT);
+        if (phone != null) this.phone = phone.trim();
+    }
 
-	public String getFullName() { return fullName; }
-	public void setFullName(String fullName) { this.fullName = fullName; }
+    /*--- Helper: make slug from name (remove accents, spaces -> '-') ---*/
+    private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
+    private static final Pattern WHITESPACE = Pattern.compile("[\\s]+");
 
-	public String getPhone() { return phone; }
-	public void setPhone(String phone) { this.phone = phone; }
-
-	public String getRole() { return role; }
-	public void setRole(String role) { this.role = role; }
-
-	public String getStatus() { return status; }
-	public void setStatus(String status) { this.status = status; }
-
-	public Date getCreatedAt() { return createdAt; }
-	public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
-
-	public List<UserAddress> getUserAddresses() { return userAddresses; }
-	public void setUserAddresses(List<UserAddress> userAddresses) { this.userAddresses = userAddresses; }
-
-	public List<Shop> getShops() { return shops; }
-	public void setShops(List<Shop> shops) { this.shops = shops; }
+    private static String toSlug(String input) {
+        if (input == null) return "";
+        String noWhite = WHITESPACE.matcher(input.trim()).replaceAll("-");
+        String normalized = Normalizer.normalize(noWhite, Normalizer.Form.NFD);
+        String slug = NONLATIN.matcher(normalized.replaceAll("\\p{M}", "")).replaceAll("");
+        slug = slug.replaceAll("[-]{2,}", "-");
+        return slug.toLowerCase(Locale.ROOT);
+    }
 }
