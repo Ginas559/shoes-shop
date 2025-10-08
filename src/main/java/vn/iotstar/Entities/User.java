@@ -1,5 +1,5 @@
 // path: src/main/java/vn/iotstar/entity/User.java
-package vn.iotstar.entity;
+package vn.iotstar.Entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -84,7 +84,7 @@ public class User {
     private String hashedPassword;
 
     // 12) Role: user/admin (default user)
-    public enum Role { USER, ADMIN }
+    public enum Role { USER, ADMIN, VENDOR, ShIPPER }
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10, columnDefinition = "varchar(10) default 'USER'")
     private Role role = Role.USER;
