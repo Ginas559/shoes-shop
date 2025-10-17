@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
@@ -7,14 +6,29 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 	version="3.0">
 
 	<persistence-unit name="dataSource">
-		<!-- CHỈ liệt kê entity cần cho phần Guest + phụ thuộc trực tiếp Shop.vendor -->
+		<!-- Guest + phụ thuộc trực tiếp Shop.vendor -->
 		<class>vn.iotstar.entities.Product</class>
 		<class>vn.iotstar.entities.Category</class>
 		<class>vn.iotstar.entities.ProductImage</class>
 		<class>vn.iotstar.entities.Shop</class>
 		<class>vn.iotstar.entities.User</class>
 
-		<!-- Không tự scan các entity khác để tránh kéo toàn bộ domain lên -->
+		<!-- User/Profile/Address -->
+		<class>vn.iotstar.entities.Address</class>
+
+		<!-- 🔽 BỔ SUNG cho User – Cốt lõi (D)(E)(F) -->
+		<!-- (D) Cart DB -->
+		<class>vn.iotstar.entities.Cart</class>
+		<class>vn.iotstar.entities.CartItem</class>
+
+		<!-- (F) Orders + Order items -->
+		<class>vn.iotstar.entities.Order</class>
+		<class>vn.iotstar.entities.OrderItem</class>
+
+		<!-- (E) Checkout COD (Payment record) -->
+		<class>vn.iotstar.entities.Payment</class>
+
+		<!-- Chỉ load các class được liệt kê (giữ nguyên chủ trương ban đầu) -->
 		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 
 		<properties>
@@ -23,13 +37,12 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 			<property name="jakarta.persistence.jdbc.driver"
 				value="com.microsoft.sqlserver.jdbc.SQLServerDriver" />
 			<property name="jakarta.persistence.jdbc.user" value="sa" />
-			<property name="jakarta.persistence.jdbc.password"
-				value="123456" />
+			<property name="jakarta.persistence.jdbc.password" value="123456" />
+
 			<property name="hibernate.show_sql" value="true" />
 			<property name="hibernate.format_sql" value="true" />
-			<property name="hibernate.hbm2ddl.auto" value="update"/>
-			<property name="hibernate.dialect"
-				value="org.hibernate.dialect.SQLServer2012Dialect" />
+			<property name="hibernate.hbm2ddl.auto" value="update" />
+			<property name="hibernate.dialect" value="org.hibernate.dialect.SQLServer2012Dialect" />
 		</properties>
 	</persistence-unit>
 </persistence>

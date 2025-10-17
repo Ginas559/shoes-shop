@@ -19,7 +19,35 @@
   <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom mb-3">
     <div class="container">
       <a class="navbar-brand" href="${pageContext.request.contextPath}/">BMTT Shop</a>
-      <a class="nav-link" href="${pageContext.request.contextPath}/products">Sản phẩm</a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <!-- Menu trái -->
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="${pageContext.request.contextPath}/products">Sản phẩm</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="${pageContext.request.contextPath}/cart">Giỏ hàng</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="${pageContext.request.contextPath}/checkout">Thanh toán (COD)</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="${pageContext.request.contextPath}/orders">Đơn hàng của tôi</a>
+          </li>
+        </ul>
+
+        <!-- Nhóm link test nhanh (không JWT) -->
+        <div class="d-flex align-items-center gap-2">
+          <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/user/profile">Hồ sơ</a>
+          <a class="btn btn-sm btn-primary" href="${pageContext.request.contextPath}/user/addresses">Địa chỉ</a>
+        </div>
+      </div>
     </div>
   </nav>
 
