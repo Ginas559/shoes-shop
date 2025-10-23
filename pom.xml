@@ -173,8 +173,13 @@
         <configuration>
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
-          <!-- Hoặc dùng <release>17</release> nếu bạn chuyển xuống Java 17 -->
-        </configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>1.18.40</version> </path>
+          </annotationProcessorPaths>
+          </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
