@@ -1,4 +1,4 @@
-// path: src/main/java/vn/iotstar/entity/User.java
+// filepath: src/main/java/vn/iotstar/entities/User.java
 package vn.iotstar.entities;
 
 import jakarta.persistence.*;
@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
  * User entity (18 fields) cho AUTH + SHOP:
  * - Lưu JSON addresses (string) để tương thích SQLServer.
  * - Tự gen slug + timestamps bằng @PrePersist/@PreUpdate.
+ * - LƯU Ý: dùng @Builder => các giá trị mặc định phải kèm @Builder.Default.
  */
 @Entity
 @Table(
@@ -66,10 +67,12 @@ public class User {
     private String phone;
 
     // 8) Email verified?
+    @Builder.Default
     @Column(nullable = false, columnDefinition = "bit default 0")
     private Boolean isEmailActive = false;
 
     // 9) Phone verified?
+    @Builder.Default
     @Column(nullable = false, columnDefinition = "bit default 0")
     private Boolean isPhoneActive = false;
 
@@ -85,11 +88,13 @@ public class User {
 
     // 12) Role: user/admin (default user)
     public enum Role { USER, ADMIN, VENDOR, ShIPPER }
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10, columnDefinition = "varchar(10) default 'USER'")
     private Role role = Role.USER;
 
     // 13) Addresses (JSON string, max ~2000 chars, limit 6 addresses do ở tầng service)
+    @Builder.Default
     @Size(max = 2000)
     @Column(length = 2000)
     private String addresses = "[]";
@@ -105,11 +110,14 @@ public class User {
     private String cover;
 
     // 16) Point (for user level)
+    @Builder.Default
     @Column(nullable = false, columnDefinition = "int default 0")
     private Integer point = 0;
 
     // 17) E-wallet balance
-    @Column(name = "e_wallet", precision = 18, scale = 2, nullable = false, columnDefinition = "decimal(18,2) default 0")
+    @Builder.Default
+    @Column(name = "e_wallet", precision = 18, scale = 2, nullable = false,
+            columnDefinition = "decimal(18,2) default 0")
     private BigDecimal eWallet = BigDecimal.ZERO;
 
     // 18) Audit timestamps
@@ -127,9 +135,16 @@ public class User {
         }
         this.createdAt = LocalDateTime.now();
         this.updatedAt = this.createdAt;
-        // Chuẩn hóa dữ liệu quan trọng
+
+        // Chuẩn hóa & default an toàn khi dùng @Builder
         if (email != null) this.email = email.trim().toLowerCase(Locale.ROOT);
         if (phone != null) this.phone = phone.trim();
+        if (addresses == null) this.addresses = "[]";
+        if (isEmailActive == null) this.isEmailActive = false;
+        if (isPhoneActive == null) this.isPhoneActive = false;
+        if (point == null) this.point = 0;
+        if (eWallet == null) this.eWallet = BigDecimal.ZERO;
+        if (role == null) this.role = Role.USER;
     }
 
     @PreUpdate
@@ -138,8 +153,15 @@ public class User {
             this.slug = toSlug(firstname + " " + lastname);
         }
         this.updatedAt = LocalDateTime.now();
+
         if (email != null) this.email = email.trim().toLowerCase(Locale.ROOT);
         if (phone != null) this.phone = phone.trim();
+        if (addresses == null) this.addresses = "[]";
+        if (isEmailActive == null) this.isEmailActive = false;
+        if (isPhoneActive == null) this.isPhoneActive = false;
+        if (point == null) this.point = 0;
+        if (eWallet == null) this.eWallet = BigDecimal.ZERO;
+        if (role == null) this.role = Role.USER;
     }
 
     /*--- Helper: make slug from name (remove accents, spaces -> '-') ---*/

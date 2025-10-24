@@ -1,22 +1,18 @@
-// filepath: src/main/webapp/WEB-INF/decorators/web.jsp
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="sitemesh" uri="http://www.sitemesh.org/decorator" %>
-
 <!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title><c:out value="${pageTitle != null ? pageTitle : 'BMTT Shop'}"/></title>
+  <title>${pageTitle != null ? pageTitle : 'BMTT Shop'}</title>
 
-  <!-- Head từ trang con -->
+  <!-- Nếu trang con có nội dung <head>, SiteMesh sẽ chèn tại đây -->
   <sitemesh:write property="head"/>
 
   <!-- Bootstrap CSS (CDN) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- (Tuỳ chọn) Dùng file local khi đã có -->
+  <!-- (Tuỳ chọn) Khi đã có file local thì bật dòng dưới và bỏ CDN ở trên -->
   <!-- <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/bootstrap.min.css"/> -->
 </head>
 <body>
@@ -55,8 +51,9 @@
             </c:when>
             <c:otherwise>
               <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/user/profile">
-                Xin chào, <c:out value="${sessionScope.email}"/>
+                Xin chào, ${sessionScope.email}
               </a>
+              <a class="btn btn-sm btn-primary" href="${pageContext.request.contextPath}/user/addresses">Địa chỉ</a>
               <form method="post" action="${pageContext.request.contextPath}/logout" class="d-inline m-0">
                 <button class="btn btn-sm btn-danger" type="submit">Đăng xuất</button>
               </form>
@@ -68,10 +65,11 @@
   </nav>
 
   <main class="container">
-    <!-- Body trang con -->
+    <!-- Body trang con sẽ được SiteMesh thay thế tại đây -->
     <sitemesh:write property="body"/>
   </main>
 
+  <!-- Footer tối thiểu, áp dụng cho mọi trang -->
   <footer class="border-top mt-5 py-3">
     <div class="container small text-muted d-flex flex-wrap gap-2 justify-content-between">
       <span>&copy; 2025 BMTTShop</span>
@@ -84,7 +82,7 @@
 
   <!-- Bootstrap JS (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- (Tuỳ chọn) file local -->
+  <!-- (Tuỳ chọn) Dùng file local khi đã chép vào dự án -->
   <!-- <script src="${pageContext.request.contextPath}/assets/js/bootstrap.bundle.min.js"></script> -->
 </body>
 </html>

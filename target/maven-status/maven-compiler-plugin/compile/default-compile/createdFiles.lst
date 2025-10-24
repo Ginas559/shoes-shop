@@ -1,6 +1,7 @@
 vn\iotstar\entities\Address$AddressBuilder.class
 vn\iotstar\entities\Order$PaymentMethod.class
 vn\iotstar\controllers\guest\ProductBrowseServlet.class
+vn\iotstar\utils\MailUtil$1.class
 vn\iotstar\entities\UserOtp$Purpose.class
 vn\iotstar\entities\User$UserBuilder.class
 vn\iotstar\services\MailService.class
@@ -27,6 +28,7 @@ vn\iotstar\controllers\auth\RegisterServlet.class
 vn\iotstar\entities\Favorite.class
 vn\iotstar\entities\Coupon$CouponBuilder.class
 vn\iotstar\entities\UserOtp$UserOtpBuilder.class
+vn\iotstar\services\OtpService$OtpResult.class
 vn\iotstar\entities\Shipper$ShipperBuilder.class
 vn\iotstar\utils\PasswordUtil.class
 vn\iotstar\services\ProductBrowseService$PageResult.class
@@ -56,6 +58,7 @@ vn\iotstar\entities\ShippingPartner$ShippingPartnerBuilder.class
 vn\iotstar\entities\OrderItem.class
 vn\iotstar\entities\ProductImage.class
 vn\iotstar\controllers\user\AddressServlet.class
+vn\iotstar\utils\MailUtil.class
 vn\iotstar\entities\Product$ProductStatus.class
 vn\iotstar\entities\Product.class
 vn\iotstar\services\MailService$1.class

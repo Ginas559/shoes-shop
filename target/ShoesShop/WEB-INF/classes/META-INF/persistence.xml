@@ -6,29 +6,21 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 	version="3.0">
 
 	<persistence-unit name="dataSource">
-		<!-- Guest + phụ thuộc trực tiếp Shop.vendor -->
 		<class>vn.iotstar.entities.Product</class>
 		<class>vn.iotstar.entities.Category</class>
 		<class>vn.iotstar.entities.ProductImage</class>
 		<class>vn.iotstar.entities.Shop</class>
 		<class>vn.iotstar.entities.User</class>
-
-		<!-- User/Profile/Address -->
 		<class>vn.iotstar.entities.Address</class>
-
-		<!-- 🔽 BỔ SUNG cho User – Cốt lõi (D)(E)(F) -->
-		<!-- (D) Cart DB -->
 		<class>vn.iotstar.entities.Cart</class>
 		<class>vn.iotstar.entities.CartItem</class>
-
-		<!-- (F) Orders + Order items -->
 		<class>vn.iotstar.entities.Order</class>
 		<class>vn.iotstar.entities.OrderItem</class>
-
-		<!-- (E) Checkout COD (Payment record) -->
 		<class>vn.iotstar.entities.Payment</class>
 
-		<!-- Chỉ load các class được liệt kê (giữ nguyên chủ trương ban đầu) -->
+		<!-- ✅ THÊM DÒNG NÀY -->
+		<class>vn.iotstar.entities.UserOtp</class>
+
 		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 
 		<properties>
@@ -38,7 +30,6 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 				value="com.microsoft.sqlserver.jdbc.SQLServerDriver" />
 			<property name="jakarta.persistence.jdbc.user" value="sa" />
 			<property name="jakarta.persistence.jdbc.password" value="123456" />
-
 			<property name="hibernate.show_sql" value="true" />
 			<property name="hibernate.format_sql" value="true" />
 			<property name="hibernate.hbm2ddl.auto" value="update" />

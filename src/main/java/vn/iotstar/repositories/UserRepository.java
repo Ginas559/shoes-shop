@@ -6,7 +6,7 @@ import vn.iotstar.entities.User;
 
 public class UserRepository {
 
-    private static final EntityManagerFactory emf = Persistence.createEntityManagerFactory("default");
+    private static final EntityManagerFactory emf = Persistence.createEntityManagerFactory("dataSource");
 
     public boolean existsByEmail(String email) {
         EntityManager em = emf.createEntityManager();

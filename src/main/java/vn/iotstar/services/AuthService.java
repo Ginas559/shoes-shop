@@ -1,5 +1,7 @@
-// tung - filepath: src/main/java/vn/iotstar/services/AuthService.java
+// filepath: src/main/java/vn/iotstar/services/AuthService.java
 package vn.iotstar.services;
+
+import java.math.BigDecimal;
 
 import vn.iotstar.entities.User;
 import vn.iotstar.repositories.UserRepository;
@@ -20,6 +22,7 @@ public class AuthService {
         String salt = PasswordUtil.generateSalt();
         String hash = PasswordUtil.hashWithBCrypt(salt + rawPassword);
 
+        // Đặt các giá trị mặc định rõ ràng để tránh NULL (nhất là eWallet/point/flags)
         User user = User.builder()
                 .firstname(firstname.trim())
                 .lastname(lastname.trim())
@@ -27,9 +30,14 @@ public class AuthService {
                 .phone(phone.trim())
                 .salt(salt)
                 .hashedPassword(hash)
+                .addresses("[]")
+                .isEmailActive(false)
+                .isPhoneActive(false)
+                .point(0)
+                .eWallet(BigDecimal.ZERO)
+                .role(User.Role.USER)
                 .build();
 
-        // isEmailActive default = false (theo entity)
         userRepo.save(user);
         return user;
     }
@@ -40,8 +48,7 @@ public class AuthService {
         u.setIsEmailActive(true);
         userRepo.update(u);
     }
-    
-    //Login + register
+
     // ✅ Đăng nhập bằng email + mật khẩu
     public User login(String email, String rawPassword) {
         User u = userRepo.findByEmail(email);
