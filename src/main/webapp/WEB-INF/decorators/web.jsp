@@ -40,6 +40,31 @@
           <li class="nav-item">
             <a class="nav-link" href="${pageContext.request.contextPath}/orders">Đơn hàng của tôi</a>
           </li>
+
+          <!-- Vendor menu (ẩn/hiện theo role) -->
+          <c:if test="${sessionScope.role == 'VENDOR'}">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Vendor
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item" href="${pageContext.request.contextPath}/vendor/dashboard">Dashboard</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="${pageContext.request.contextPath}/vendor/products">Sản phẩm</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="${pageContext.request.contextPath}/vendor/orders">Đơn hàng</a>
+                </li>
+                <!-- Nếu bạn đã có trang UI thống kê: đổi link dưới thành /vendor/statistics/view -->
+                <li>
+                  <a class="dropdown-item" href="${pageContext.request.contextPath}/vendor/statistics/view">Thống kê</a>
+
+                </li>
+              </ul>
+            </li>
+          </c:if>
         </ul>
 
         <!-- User actions -->
