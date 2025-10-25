@@ -2,6 +2,7 @@ vn\iotstar\entities\Address$AddressBuilder.class
 vn\iotstar\entities\Order$PaymentMethod.class
 vn\iotstar\controllers\guest\ProductBrowseServlet.class
 vn\iotstar\utils\MailUtil$1.class
+vn\iotstar\services\ProductImageService.class
 vn\iotstar\entities\UserOtp$Purpose.class
 vn\iotstar\entities\User$UserBuilder.class
 vn\iotstar\services\MailService.class
@@ -78,6 +79,8 @@ vn\iotstar\entities\Payment.class
 vn\iotstar\entities\ProductReview.class
 vn\iotstar\services\ProductService.class
 vn\iotstar\utils\SessionUtil.class
+vn\iotstar\configs\CloudinaryConfig.class
+vn\iotstar\controllers\TestCloudinaryServlet.class
 vn\iotstar\controllers\vendor\VendorStatisticServlet.class
 vn\iotstar\entities\Product$ProductBuilder.class
 vn\iotstar\entities\Coupon.class

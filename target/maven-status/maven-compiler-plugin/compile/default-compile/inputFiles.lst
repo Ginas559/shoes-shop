@@ -1,3 +1,4 @@
+D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\configs\CloudinaryConfig.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\configs\JPAConfig.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\configs\Test.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\auth\LoginServlet.java
@@ -8,6 +9,7 @@ D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\guest\ProductBrowseS
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\order\CartServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\order\CheckoutServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\order\OrderServlet.java
+D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\TestCloudinaryServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\user\AddressServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\user\ProfileServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorDashboardServlet.java
@@ -44,6 +46,7 @@ D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\MailService.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\OrderService.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\OtpService.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\ProductBrowseService.java
+D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\ProductImageService.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\ProductService.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\StatisticService.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\utils\AuthFilter.java

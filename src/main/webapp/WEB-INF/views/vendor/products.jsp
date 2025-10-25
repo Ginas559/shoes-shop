@@ -8,7 +8,9 @@
     <div class="card-body">
       <h5 class="card-title">Thêm / Cập nhật sản phẩm</h5>
 
+      <!-- THÊM enctype -->
       <form method="post"
+            enctype="multipart/form-data"
             action="<c:url value='/vendor/products/${empty p ? "add" : "update"}'/>"
             class="row g-3">
         <c:if test="${not empty p}">
@@ -41,6 +43,13 @@
               </option>
             </c:forEach>
           </select>
+        </div>
+
+        <!-- THÊM input ảnh -->
+        <div class="col-md-6">
+          <label class="form-label">Ảnh sản phẩm</label>
+          <input type="file" name="image" accept="image/*" class="form-control"/>
+          <small class="text-muted">Chọn 1 ảnh — sẽ lấy làm thumbnail.</small>
         </div>
 
         <c:if test="${not empty p}">

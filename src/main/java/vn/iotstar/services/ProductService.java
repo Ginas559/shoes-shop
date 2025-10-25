@@ -10,6 +10,9 @@ import vn.iotstar.entities.Product;
 import vn.iotstar.entities.Shop;
 import vn.iotstar.utils.SessionUtil;
 
+import vn.iotstar.entities.Category;        // <-- dùng đúng entity của bạn
+import vn.iotstar.utils.SessionUtil; 
+
 public class ProductService {
 
     private final StatisticService helper = new StatisticService();
@@ -28,42 +31,63 @@ public class ProductService {
         } finally { em.close(); }
     }
 
-    public void add(HttpServletRequest req) {
+    /** Tạo product mới và TRẢ VỀ productId để servlet còn lưu ảnh. */
+    public Long add(HttpServletRequest req) {
         Long uid = SessionUtil.currentUserId(req);
         if (uid == null) throw new RuntimeException("Chưa đăng nhập");
+
         Shop shop = helper.findShopByOwner(uid);
         if (shop == null) throw new RuntimeException("Shop không tồn tại cho vendor");
 
-        String name = req.getParameter("name");
-        String priceStr = req.getParameter("price");
-        String stockStr = req.getParameter("stock");
-        String catStr   = req.getParameter("categoryId");   // <-- lấy categoryId
+        String name    = req.getParameter("name");
+        String priceStr= req.getParameter("price");
+        String stockStr= req.getParameter("stock");
+        String catStr  = req.getParameter("categoryId");
 
-        if (name == null || name.isBlank()) throw new RuntimeException("Tên sản phẩm không được rỗng");
-        if (catStr == null || catStr.isBlank()) throw new RuntimeException("Vui lòng chọn danh mục");
+        if (name == null || name.isBlank())
+            throw new RuntimeException("Tên sản phẩm không được rỗng");
+        if (catStr == null || catStr.isBlank())
+            throw new RuntimeException("Vui lòng chọn danh mục");
 
-        BigDecimal price = new BigDecimal(priceStr);
-        int stock = Integer.parseInt(stockStr);
-        Long categoryId = Long.valueOf(catStr);
+        BigDecimal price;
+        int stock;
+        Long categoryId;
+
+        try {
+            price = new BigDecimal(priceStr);
+            stock = Integer.parseInt(stockStr);
+            categoryId = Long.valueOf(catStr);
+        } catch (Exception ex) {
+            throw new RuntimeException("Giá/ tồn/ danh mục không hợp lệ", ex);
+        }
 
         EntityManager em = JPAConfig.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
+
             Product p = Product.builder()
-                .productName(name)
-                .price(price)
-                .stock(stock)
-                .status(Product.ProductStatus.ACTIVE)
-                .shop(em.getReference(Shop.class, shop.getShopId()))
-                .category(em.getReference(vn.iotstar.entities.Category.class, categoryId)) // <-- gán category
-                .build();
+                    .productName(name)
+                    .price(price)
+                    .stock(stock)
+                    .status(Product.ProductStatus.ACTIVE)
+                    .shop(em.getReference(Shop.class, shop.getShopId()))
+                    .category(em.getReference(Category.class, categoryId))
+                    .build();
+
             em.persist(p);
+            // đảm bảo đã có id trước khi commit
+            em.flush();
+            Long newId = p.getProductId();
+
             tx.commit();
+            return newId;
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
             throw e;
-        } finally { em.close(); }
+        } finally {
+            em.close();
+        }
     }
 
 
