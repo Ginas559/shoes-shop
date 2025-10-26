@@ -87,5 +87,6 @@ vn\iotstar\entities\Product$ProductBuilder.class
 vn\iotstar\entities\Coupon.class
 vn\iotstar\entities\Order$OrderBuilder.class
 vn\iotstar\controllers\order\CartServlet.class
+vn\iotstar\services\ProductBrowseService$ShopOptionVM.class
 vn\iotstar\entities\OrderItem$OrderItemBuilder.class
 vn\iotstar\entities\User.class

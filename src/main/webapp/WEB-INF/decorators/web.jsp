@@ -1,3 +1,4 @@
+<!-- filepath: src/main/webapp/WEB-INF/decorators/layout.jsp -->
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!doctype html>
@@ -7,13 +8,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>${pageTitle != null ? pageTitle : 'BMTT Shop'}</title>
 
-  <!-- Nếu trang con có nội dung <head>, SiteMesh sẽ chèn tại đây -->
+  <!-- SiteMesh: head -->
   <sitemesh:write property="head"/>
 
-  <!-- Bootstrap CSS (CDN) -->
+  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- (Tuỳ chọn) Khi đã có file local thì bật dòng dưới và bỏ CDN ở trên -->
-  <!-- <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/bootstrap.min.css"/> -->
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom mb-3">
@@ -41,7 +40,7 @@
             <a class="nav-link" href="${pageContext.request.contextPath}/orders">Đơn hàng của tôi</a>
           </li>
 
-          <!-- Vendor menu (ẩn/hiện theo role) -->
+          <!-- Vendor menu -->
           <c:if test="${sessionScope.role == 'VENDOR'}">
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -57,10 +56,11 @@
                 <li>
                   <a class="dropdown-item" href="${pageContext.request.contextPath}/vendor/orders">Đơn hàng</a>
                 </li>
-                <!-- Nếu bạn đã có trang UI thống kê: đổi link dưới thành /vendor/statistics/view -->
+                <li>
+                  <a class="dropdown-item" href="${pageContext.request.contextPath}/vendor/shop">Hồ sơ Shop</a>
+                </li>
                 <li>
                   <a class="dropdown-item" href="${pageContext.request.contextPath}/vendor/statistics/view">Thống kê</a>
-
                 </li>
               </ul>
             </li>
@@ -90,11 +90,9 @@
   </nav>
 
   <main class="container">
-    <!-- Body trang con sẽ được SiteMesh thay thế tại đây -->
     <sitemesh:write property="body"/>
   </main>
 
-  <!-- Footer tối thiểu, áp dụng cho mọi trang -->
   <footer class="border-top mt-5 py-3">
     <div class="container small text-muted d-flex flex-wrap gap-2 justify-content-between">
       <span>&copy; 2025 BMTTShop</span>
@@ -105,9 +103,6 @@
     </div>
   </footer>
 
-  <!-- Bootstrap JS (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- (Tuỳ chọn) Dùng file local khi đã chép vào dự án -->
-  <!-- <script src="${pageContext.request.contextPath}/assets/js/bootstrap.bundle.min.js"></script> -->
 </body>
 </html>
