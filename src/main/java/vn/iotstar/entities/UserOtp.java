@@ -27,7 +27,7 @@ public class UserOtp {
     private User user;
 
     // Mục đích của mã OTP
-    public enum Purpose { REGISTER, RESET_PASSWORD }
+    public enum Purpose { REGISTER, RESET }
     @Enumerated(EnumType.STRING)
     @Column(name = "purpose", length = 20, nullable = false)
     private Purpose purpose;

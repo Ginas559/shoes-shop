@@ -19,6 +19,10 @@ public class VerifyOtpServlet extends HttpServlet {
         this.otpService = new OtpService();
     }
 
+    private String resetFlag(String email) {
+        return "RESET_READY:" + email;
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -30,24 +34,45 @@ public class VerifyOtpServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String path = req.getServletPath();
+        String purpose = req.getParameter("purpose"); // "register" | "reset"
+        String email = req.getParameter("email");
+
         if ("/otp/resend".equals(path)) {
-            String email = req.getParameter("email");
-            boolean ok = otpService.resendRegisterOtp(email);
-            req.getSession().setAttribute("flash", ok ? "Đã gửi lại OTP." : "Không gửi được OTP. Vui lòng thử lại.");
-            resp.sendRedirect(req.getContextPath() + "/verify?email=" + email);
+            boolean ok;
+            if ("reset".equalsIgnoreCase(purpose)) {
+                ok = otpService.resendResetOtp(email);
+                req.getSession().setAttribute("flash", ok ? "Đã gửi lại OTP đặt lại mật khẩu." : "Không gửi được OTP. Vui lòng thử lại.");
+                resp.sendRedirect(req.getContextPath() + "/verify?purpose=reset&email=" + email);
+            } else {
+                ok = otpService.resendRegisterOtp(email);
+                req.getSession().setAttribute("flash", ok ? "Đã gửi lại OTP kích hoạt." : "Không gửi được OTP. Vui lòng thử lại.");
+                resp.sendRedirect(req.getContextPath() + "/verify?email=" + email);
+            }
             return;
         }
 
         // POST /verify
-        String email = req.getParameter("email");
-        String code  = req.getParameter("code");
-        boolean ok = otpService.verifyActivateOtp(email, code);
-        if (ok) {
-            req.getSession().setAttribute("flash", "Kích hoạt tài khoản thành công. Vui lòng đăng nhập.");
-            resp.sendRedirect(req.getContextPath() + "/login");
+        String code = req.getParameter("code");
+
+        if ("reset".equalsIgnoreCase(purpose)) {
+            boolean ok = otpService.verifyResetOtp(email, code);
+            if (ok) {
+                req.getSession().setAttribute(resetFlag(email), Boolean.TRUE);
+                req.getSession().setAttribute("flash", "Mã OTP hợp lệ. Vui lòng đặt mật khẩu mới.");
+                resp.sendRedirect(req.getContextPath() + "/reset-password?email=" + email);
+            } else {
+                req.getSession().setAttribute("flash", "Mã OTP không đúng hoặc đã hết hạn.");
+                resp.sendRedirect(req.getContextPath() + "/verify?purpose=reset&email=" + email);
+            }
         } else {
-            req.getSession().setAttribute("flash", "Mã OTP không đúng hoặc đã hết hạn.");
-            resp.sendRedirect(req.getContextPath() + "/verify?email=" + email);
+            boolean ok = otpService.verifyActivateOtp(email, code);
+            if (ok) {
+                req.getSession().setAttribute("flash", "Kích hoạt tài khoản thành công. Vui lòng đăng nhập.");
+                resp.sendRedirect(req.getContextPath() + "/login");
+            } else {
+                req.getSession().setAttribute("flash", "Mã OTP không đúng hoặc đã hết hạn.");
+                resp.sendRedirect(req.getContextPath() + "/verify?email=" + email);
+            }
         }
     }
 }

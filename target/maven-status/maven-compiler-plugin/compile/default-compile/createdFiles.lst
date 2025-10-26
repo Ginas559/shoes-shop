@@ -9,6 +9,7 @@ vn\iotstar\services\MailService.class
 vn\iotstar\entities\ProductReview$ProductReviewBuilder.class
 vn\iotstar\configs\JPAConfig.class
 vn\iotstar\entities\Shop$ShopBuilder.class
+vn\iotstar\controllers\auth\ForgotPasswordServlet.class
 vn\iotstar\entities\Shop.class
 vn\iotstar\controllers\auth\LogoutServlet.class
 vn\iotstar\entities\Promotion.class
@@ -74,6 +75,7 @@ vn\iotstar\entities\UserVerification$UserVerificationBuilder.class
 vn\iotstar\controllers\order\CheckoutServlet.class
 vn\iotstar\entities\Payment$PaymentBuilder.class
 vn\iotstar\services\StatisticService.class
+vn\iotstar\controllers\auth\ResetPasswordServlet.class
 vn\iotstar\entities\Payment.class
 vn\iotstar\entities\ProductReview.class
 vn\iotstar\services\ProductService.class
