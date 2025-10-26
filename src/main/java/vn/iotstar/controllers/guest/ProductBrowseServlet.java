@@ -13,7 +13,8 @@ import java.util.List;
 public class ProductBrowseServlet extends HttpServlet {
     private final ProductBrowseService svc = new ProductBrowseService();
 
-    @Override protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         String sp = req.getServletPath(); // "/products" hoặc "/product"
         if ("/products".equals(sp)) list(req, resp);
@@ -24,21 +25,33 @@ public class ProductBrowseServlet extends HttpServlet {
         int page = parseInt(req.getParameter("page"), 1);
         int size = parseInt(req.getParameter("size"), 20);
 
+        // Lọc theo shop
+        Long shopId = parseLongObj(req.getParameter("shopId"));
+
         var result = svc.page(
                 req.getParameter("q"),
                 parseLongObj(req.getParameter("catId")),
                 parseBD(req.getParameter("minPrice")),
                 parseBD(req.getParameter("maxPrice")),
                 parseIntObj(req.getParameter("minRating")),
+                shopId,
                 req.getParameter("sort"),
                 page, size
         );
+
+        // Nạp danh sách shop cho ô lọc (có thể gõ để gợi ý)
+        String shopQ = req.getParameter("shopQ");              // từ ô tìm shop
+        var shops = svc.shops(shopQ);                          // trả về id, name
 
         List<Category> cats = svc.categories();
 
         req.setAttribute("pageTitle", "Sản phẩm");
         req.setAttribute("page", result);
         req.setAttribute("categories", cats);
+        req.setAttribute("shopId", shopId);
+        req.setAttribute("shops", shops);                      // <-- NEW
+        req.setAttribute("shopQ", shopQ);                      // giữ lại giá trị đã gõ
+
         req.getRequestDispatcher("/WEB-INF/views/products/list.jsp").forward(req, resp);
     }
 

@@ -1,6 +1,5 @@
 package vn.iotstar.entities;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,9 +16,10 @@ public class Category {
     @Column(name = "category_id")
     private Long categoryId;
 
-    @Column(name = "category_name", nullable = false, length = 100)
+    // ✅ Dùng NVARCHAR để lưu tiếng Việt chuẩn
+    @Column(name = "category_name", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
     private String categoryName;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", length = 500, columnDefinition = "NVARCHAR(500)")
     private String description;
 }

@@ -1,22 +1,26 @@
-//src/main/java/vn/iotstar/services/ProductService.java
+// src/main/java/vn/iotstar/services/ProductService.java
 package vn.iotstar.services;
 
 import java.math.BigDecimal;
 import java.util.List;
+
 import jakarta.persistence.*;
 import jakarta.servlet.http.HttpServletRequest;
+
 import vn.iotstar.configs.JPAConfig;
 import vn.iotstar.entities.Product;
 import vn.iotstar.entities.Shop;
+import vn.iotstar.entities.Category;
 import vn.iotstar.utils.SessionUtil;
-
-import vn.iotstar.entities.Category;        // <-- dùng đúng entity của bạn
-import vn.iotstar.utils.SessionUtil; 
 
 public class ProductService {
 
     private final StatisticService helper = new StatisticService();
 
+    /**
+     * Danh sách sản phẩm của vendor (dùng trong trang quản trị vendor).
+     * Đã JOIN FETCH shop để tránh Lazy khi hiển thị shopName.
+     */
     public List<Product> getByVendor(HttpServletRequest req) {
         Long uid = SessionUtil.currentUserId(req);
         if (uid == null) return List.of();
@@ -26,8 +30,13 @@ public class ProductService {
         EntityManager em = JPAConfig.getEntityManager();
         try {
             return em.createQuery(
-                "SELECT p FROM Product p WHERE p.shop.shopId = :sid ORDER BY p.productId DESC",
-                Product.class).setParameter("sid", shop.getShopId()).getResultList();
+                "SELECT p FROM Product p " +
+                "JOIN FETCH p.shop s " +
+                "WHERE s.shopId = :sid " +
+                "ORDER BY p.productId DESC",
+                Product.class
+            ).setParameter("sid", shop.getShopId())
+             .getResultList();
         } finally { em.close(); }
     }
 
@@ -76,8 +85,7 @@ public class ProductService {
                     .build();
 
             em.persist(p);
-            // đảm bảo đã có id trước khi commit
-            em.flush();
+            em.flush(); // đảm bảo có id
             Long newId = p.getProductId();
 
             tx.commit();
@@ -90,11 +98,43 @@ public class ProductService {
         }
     }
 
-
+    /** Lấy 1 product (KHÔNG JOIN shop) – GIỮ NGUYÊN để không phá chỗ khác. */
     public Product findById(Long id) {
         EntityManager em = JPAConfig.getEntityManager();
         try { return em.find(Product.class, id); }
         finally { em.close(); }
+    }
+
+    /** Lấy 1 product KÈM shop để render detail.jsp hiển thị shopName. */
+    public Product findByIdWithShop(Long id) {
+        EntityManager em = JPAConfig.getEntityManager();
+        try {
+            return em.createQuery(
+                "SELECT p FROM Product p " +
+                "JOIN FETCH p.shop " +
+                "WHERE p.productId = :id",
+                Product.class
+            ).setParameter("id", id)
+             .getSingleResult();
+        } finally { em.close(); }
+    }
+
+    /** List sản phẩm ACTIVE kèm shop để render list.jsp (có phân trang). */
+    public List<Product> findActiveWithShop(int page, int size) {
+        int first = Math.max(0, page) * Math.max(1, size);
+        EntityManager em = JPAConfig.getEntityManager();
+        try {
+            return em.createQuery(
+                "SELECT p FROM Product p " +
+                "JOIN FETCH p.shop " +
+                "WHERE p.status = :st " +
+                "ORDER BY p.productId DESC",
+                Product.class
+            ).setParameter("st", Product.ProductStatus.ACTIVE)
+             .setFirstResult(first)
+             .setMaxResults(size)
+             .getResultList();
+        } finally { em.close(); }
     }
 
     public void update(HttpServletRequest req) {

@@ -1,13 +1,25 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 
 <h1 class="h5 mb-3">${empty pageTitle ? 'Sản phẩm' : pageTitle}</h1>
 
-<form class="row g-2 mb-3" method="get" action="">
+<form class="row g-2 mb-3" method="get" action="" id="filterForm">
   <div class="col-12 col-md-4">
     <input class="form-control" name="q" value="${param.q}" placeholder="Tìm kiếm...">
+  </div>
+
+  <!-- Ô lọc theo Shop -->
+  <div class="col-6 col-md-3">
+    <input class="form-control" name="shopQ" list="shopList" value="${shopQ}" placeholder="Shop...">
+    <datalist id="shopList">
+      <c:forEach var="s" items="${shops}">
+        <option value="${s.name}" data-id="${s.id}"></option>
+      </c:forEach>
+    </datalist>
+    <input type="hidden" name="shopId" id="shopIdInput" value="${param.shopId}">
   </div>
 
   <div class="col-6 col-md-3">
@@ -19,12 +31,16 @@
     </select>
   </div>
 
-  <div class="col-6 col-md-2">
-    <input class="form-control" type="number" min="0" name="minPrice" value="${param.minPrice}" placeholder="Giá từ">
-  </div>
-
-  <div class="col-6 col-md-2">
-    <input class="form-control" type="number" min="0" name="maxPrice" value="${param.maxPrice}" placeholder="Giá đến">
+  <%-- Gộp Giá từ + Giá đến thành một nhóm nằm cùng hàng --%>
+  <div class="col-12 col-md-4">
+    <div class="input-group">
+      <span class="input-group-text">Giá</span>
+      <input class="form-control" type="number" min="0" name="minPrice"
+             value="${param.minPrice}" placeholder="Từ">
+      <span class="input-group-text">→</span>
+      <input class="form-control" type="number" min="0" name="maxPrice"
+             value="${param.maxPrice}" placeholder="Đến">
+    </div>
   </div>
 
   <div class="col-6 col-md-2">
@@ -46,7 +62,7 @@
     </select>
   </div>
 
-  <!-- Page size (giữ nguyên backend hiện có: nếu không dùng, tham số này sẽ bị bỏ qua an toàn) -->
+  <!-- Page size -->
   <div class="col-6 col-md-2">
     <select class="form-select" name="size">
       <c:set var="currSize" value="${empty param.size ? (empty page.size ? 12 : page.size) : param.size}"/>
@@ -58,8 +74,7 @@
 
   <div class="col-12 col-md-auto d-flex gap-2">
     <button class="btn btn-primary">Lọc</button>
-    <a class="btn btn-outline-secondary"
-       href="<c:url value='/products'/>">Xóa lọc</a>
+    <a class="btn btn-outline-secondary" href="<c:url value='/products'/>">Xóa lọc</a>
   </div>
 </form>
 
@@ -71,16 +86,69 @@
       <c:forEach var="p" items="${items}">
         <div class="col">
           <div class="card h-100">
+
             <a href="${ctx}/product/${p.id}">
+              <%-- Resolve cover image robustly --%>
+              <c:set var="coverRaw" value="${empty p.coverUrl ? '' : p.coverUrl}"/>
+              <%-- Sửa nhầm thư mục /assset -> /assets --%>
+              <c:set var="coverFixed" value="${fn:replace(coverRaw, '/assset/', '/assets/')}"/>
+
+              <c:choose>
+                <%-- URL tuyệt đối http/https: giữ nguyên --%>
+                <c:when test="${fn:startsWith(coverFixed,'http://') or fn:startsWith(coverFixed,'https://')}">
+                  <c:set var="resolvedCover" value="${coverFixed}"/>
+                </c:when>
+
+                <%-- Đường dẫn bắt đầu bằng /assets/... : tự ghép ctx --%>
+                <c:when test="${fn:startsWith(coverFixed,'/assets/')}">
+                  <c:set var="resolvedCover" value="${ctx.concat(coverFixed)}"/>
+                </c:when>
+
+                <%-- Đường dẫn bắt đầu bằng / (nhưng không phải /assets): dùng nguyên như đã lưu --%>
+                <c:when test="${fn:startsWith(coverFixed,'/')}">
+                  <c:set var="resolvedCover" value="${coverFixed}"/>
+                </c:when>
+
+                <%-- Chỉ là tên file: trỏ về /assets/products/ --%>
+                <c:otherwise>
+                  <c:set var="resolvedCover" value="${ctx.concat('/assets/products/').concat(coverFixed)}"/>
+                </c:otherwise>
+              </c:choose>
+
               <img class="card-img-top" style="aspect-ratio:1/1;object-fit:cover"
-                   src="${empty p.coverUrl ? (ctx.concat('/assets/img/placeholder.png')) : p.coverUrl}"
-                   alt="${p.name}">
+                   src="${empty resolvedCover ? (ctx.concat('/assets/img/placeholder.png')) : resolvedCover}"
+                   alt="${p.name}"
+                   onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
             </a>
 
             <div class="card-body p-2 d-flex flex-column">
               <div class="small text-muted text-truncate" title="${p.categoryName}">${p.categoryName}</div>
-
               <div class="fw-semibold text-truncate mb-1" title="${p.name}">${p.name}</div>
+
+              <c:if test="${not empty p.shopName}">
+                <div class="d-flex align-items-center gap-2 small text-truncate mb-1" title="${p.shopName}">
+                  <c:if test="${not empty p.shopLogoUrl}">
+                    <img src="${ctx}${p.shopLogoUrl}" alt="${p.shopName}"
+                         width="18" height="18" class="rounded"
+                         onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
+                  </c:if>
+                  <a class="badge bg-secondary-subtle border text-secondary text-decoration-none"
+                     href="<c:url value='/products'>
+                              <c:param name='q'         value='${param.q}'/>
+                              <c:param name='shopQ'     value='${p.shopName}'/>
+                              <c:param name='catId'     value='${param.catId}'/>
+                              <c:param name='minPrice'  value='${param.minPrice}'/>
+                              <c:param name='maxPrice'  value='${param.maxPrice}'/>
+                              <c:param name='minRating' value='${param.minRating}'/>
+                              <c:param name='sort'      value='${param.sort}'/>
+                              <c:param name='size'      value='${empty param.size ? (empty page.size ? 12 : page.size) : param.size}'/>
+                              <c:param name='page'      value='1'/>
+                              <c:param name='shopId'    value='${p.shopId}'/>
+                           </c:url>">
+                    ${p.shopName}
+                  </a>
+                </div>
+              </c:if>
 
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <div class="fw-bold">
@@ -127,6 +195,7 @@
             <a class="page-link"
                href="<c:url value='/products'>
                         <c:param name='q'         value='${param.q}'/>
+                        <c:param name='shopQ'     value='${shopQ}'/>
                         <c:param name='catId'     value='${param.catId}'/>
                         <c:param name='minPrice'  value='${param.minPrice}'/>
                         <c:param name='maxPrice'  value='${param.maxPrice}'/>
@@ -134,6 +203,7 @@
                         <c:param name='sort'      value='${param.sort}'/>
                         <c:param name='size'      value='${empty param.size ? (empty page.size ? 12 : page.size) : param.size}'/>
                         <c:param name='page'      value='${page.number-1}'/>
+                        <c:param name='shopId'    value='${param.shopId}'/>
                     </c:url>">«</a>
           </li>
 
@@ -142,6 +212,7 @@
               <a class="page-link"
                  href="<c:url value='/products'>
                           <c:param name='q'         value='${param.q}'/>
+                          <c:param name='shopQ'     value='${shopQ}'/>
                           <c:param name='catId'     value='${param.catId}'/>
                           <c:param name='minPrice'  value='${param.minPrice}'/>
                           <c:param name='maxPrice'  value='${param.maxPrice}'/>
@@ -149,6 +220,7 @@
                           <c:param name='sort'      value='${param.sort}'/>
                           <c:param name='size'      value='${empty param.size ? (empty page.size ? 12 : page.size) : param.size}'/>
                           <c:param name='page'      value='${i}'/>
+                          <c:param name='shopId'    value='${param.shopId}'/>
                       </c:url>">${i}</a>
             </li>
           </c:forEach>
@@ -157,6 +229,7 @@
             <a class="page-link"
                href="<c:url value='/products'>
                         <c:param name='q'         value='${param.q}'/>
+                        <c:param name='shopQ'     value='${shopQ}'/>
                         <c:param name='catId'     value='${param.catId}'/>
                         <c:param name='minPrice'  value='${param.minPrice}'/>
                         <c:param name='maxPrice'  value='${param.maxPrice}'/>
@@ -164,6 +237,7 @@
                         <c:param name='sort'      value='${param.sort}'/>
                         <c:param name='size'      value='${empty param.size ? (empty page.size ? 12 : page.size) : param.size}'/>
                         <c:param name='page'      value='${page.number+1}'/>
+                        <c:param name='shopId'    value='${param.shopId}'/>
                     </c:url>">»</a>
           </li>
         </ul>
@@ -175,3 +249,51 @@
     <div class="text-center text-muted py-5">Chưa có sản phẩm để hiển thị.</div>
   </c:otherwise>
 </c:choose>
+
+<!-- Đồng bộ shopQ <-> shopId: chuẩn hoá mạnh, bắt đủ sự kiện, sync trước submit -->
+<script>
+  (function () {
+    var form   = document.getElementById('filterForm');
+    var input  = document.querySelector('input[name="shopQ"]');
+    var hidden = document.getElementById('shopIdInput');
+    var list   = document.getElementById('shopList');
+    if (!form || !input || !hidden || !list) return;
+
+    function stripVN(s) {
+      return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+    function norm(s) {
+      return stripVN(s).trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function sync() {
+      var nv = norm(input.value);
+      var id = '';
+      var opts = list.querySelectorAll('option');
+
+      if (nv) {
+        for (var i = 0; i < opts.length; i++) {
+          if (norm(opts[i].value) === nv) { id = opts[i].dataset.id || ''; break; }
+        }
+        if (!id) {
+          var candidates = [];
+          for (var j = 0; j < opts.length; j++) {
+            if (norm(opts[j].value).indexOf(nv) === 0) candidates.push(opts[j]);
+          }
+          if (candidates.length === 1) id = candidates[0].dataset.id || '';
+        }
+      }
+      hidden.value = id;
+    }
+
+    input.addEventListener('input', function(){
+      if (!input.value) hidden.value = '';
+      else sync();
+    });
+    input.addEventListener('change', sync);
+    input.addEventListener('blur', sync);
+    input.addEventListener('keydown', function(e){ if (e.key === 'Enter') sync(); });
+    form.addEventListener('submit', function(){ sync(); }, true);
+    sync();
+  })();
+</script>

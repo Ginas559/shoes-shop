@@ -1,9 +1,10 @@
 package vn.iotstar.entities;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "[Shop]")
@@ -24,6 +25,8 @@ public class Shop {
         nullable = false,
         foreignKey = @ForeignKey(name = "FK_Shop_User")
     )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User vendor;
 
     @Column(name = "shop_name", nullable = false, length = 150)
@@ -44,10 +47,16 @@ public class Shop {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    // Quan hệ ngược để tránh N+1 và hỗ trợ hiển thị shopName từ Product
+    @OneToMany(mappedBy = "shop", fetch = FetchType.LAZY)
+    @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Product> products = new ArrayList<>();
+
     public enum ShopStatus {
         ACTIVE,
         BANNED,
         PENDING
     }
 }
-
