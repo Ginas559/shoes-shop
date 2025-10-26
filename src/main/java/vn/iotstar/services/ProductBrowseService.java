@@ -3,12 +3,11 @@ package vn.iotstar.services;
 import vn.iotstar.configs.JPAConfig;
 import vn.iotstar.entities.Product;
 import vn.iotstar.entities.Category;
-import vn.iotstar.entities.ProductImage;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.*;
-	
+
 public class ProductBrowseService {
 
     // ==== DTOs (POJO có getter, tránh lỗi JSP EL) ====
@@ -16,24 +15,42 @@ public class ProductBrowseService {
         private final Long id;
         private final String name;
         private final String categoryName;
+        private final Long shopId;
+        private final String shopName;
+        private final String shopLogoUrl;   // <-- NEW
         private final BigDecimal price;
         private final BigDecimal discountPrice;
         private final Double ratingAvg;
         private final String coverUrl;
+
         public ItemVM(Long id, String name, String categoryName,
+                      Long shopId, String shopName, String shopLogoUrl,
                       BigDecimal price, BigDecimal discountPrice,
                       Double ratingAvg, String coverUrl) {
             this.id = id; this.name = name; this.categoryName = categoryName;
+            this.shopId = shopId; this.shopName = shopName; this.shopLogoUrl = shopLogoUrl;
             this.price = price; this.discountPrice = discountPrice;
             this.ratingAvg = ratingAvg; this.coverUrl = coverUrl;
         }
         public Long getId() { return id; }
         public String getName() { return name; }
         public String getCategoryName() { return categoryName; }
+        public Long getShopId() { return shopId; }
+        public String getShopName() { return shopName; }
+        public String getShopLogoUrl() { return shopLogoUrl; } // <-- NEW
         public BigDecimal getPrice() { return price; }
         public BigDecimal getDiscountPrice() { return discountPrice; }
         public Double getRatingAvg() { return ratingAvg; }
         public String getCoverUrl() { return coverUrl; }
+    }
+
+    /** Option cho ô chọn Shop trên UI */
+    public static class ShopOptionVM {
+        private final Long id;
+        private final String name;
+        public ShopOptionVM(Long id, String name) { this.id = id; this.name = name; }
+        public Long getId() { return id; }
+        public String getName() { return name; }
     }
 
     public static class PageResult<T> {
@@ -55,11 +72,22 @@ public class ProductBrowseService {
         public boolean isHasNext() { return number < totalPages; }
     }
 
-    // ==== API trang danh sách ====
+    // ==== API trang danh sách (GIỮ NGUYÊN, không có shopId) ====
     public PageResult<ItemVM> page(
             String q, Long catId,
             BigDecimal minPrice, BigDecimal maxPrice,
             Integer minRating,
+            String sort, int page, int size
+    ){
+        return page(q, catId, minPrice, maxPrice, minRating, null, sort, page, size);
+    }
+
+    // ==== API trang danh sách (MỚI) – có shopId để lọc theo shop ====
+    public PageResult<ItemVM> page(
+            String q, Long catId,
+            BigDecimal minPrice, BigDecimal maxPrice,
+            Integer minRating,
+            Long shopId,
             String sort, int page, int size
     ){
         EntityManager em = JPAConfig.getEntityManager();
@@ -81,8 +109,10 @@ public class ProductBrowseService {
                 where.append(" AND (p.ratingAvg IS NOT NULL AND p.ratingAvg >= :minR) ");
                 p.put("minR", minRating.doubleValue());
             }
-            // ⛔️ BỎ lọc status để tránh lỗi enum FQCN (giữ tối thiểu, không đụng entity)
-            // where.append(" AND (p.status IS NULL OR p.status = vn.iotstar.Entities.Product$ProductStatus.ACTIVE) ");
+            if (shopId != null) {
+                where.append(" AND s.shopId = :shopId ");
+                p.put("shopId", shopId);
+            }
 
             String order = switch (sort == null ? "" : sort) {
                 case "price_asc"   -> " ORDER BY p.price ASC ";
@@ -94,22 +124,25 @@ public class ProductBrowseService {
 
             // Count
             TypedQuery<Long> cq = em.createQuery(
-                    "SELECT COUNT(p) FROM Product p JOIN p.category c" + where, Long.class);
+                "SELECT COUNT(p) FROM Product p JOIN p.category c JOIN p.shop s" + where, Long.class);
             p.forEach(cq::setParameter);
             long total = cq.getSingleResult();
             int totalPages = Math.max(1, (int)Math.ceil(total/(double)size));
 
-            // Page items
+            // Page items (JOIN FETCH shop để lấy logo_url)
             TypedQuery<Product> qlist = em.createQuery(
-                    "SELECT p FROM Product p JOIN p.category c" + where + order, Product.class);
+                "SELECT p FROM Product p " +
+                "JOIN p.category c " +
+                "JOIN FETCH p.shop s " +
+                where + order, Product.class);
             p.forEach(qlist::setParameter);
             qlist.setFirstResult((page-1)*size).setMaxResults(size);
             List<Product> products = qlist.getResultList();
 
             // Cover image (ưu tiên isThumbnail=true)
             TypedQuery<String> coverQ = em.createQuery(
-                    "SELECT pi.imageUrl FROM ProductImage pi WHERE pi.product = :prod " +
-                    "ORDER BY CASE WHEN pi.isThumbnail = true THEN 0 ELSE 1 END, pi.id", String.class);
+                "SELECT pi.imageUrl FROM ProductImage pi WHERE pi.product = :prod " +
+                "ORDER BY CASE WHEN pi.isThumbnail = true THEN 0 ELSE 1 END, pi.id", String.class);
 
             List<ItemVM> items = new ArrayList<>();
             for (Product pr : products) {
@@ -120,6 +153,9 @@ public class ProductBrowseService {
                     pr.getProductId(),
                     pr.getProductName(),
                     pr.getCategory() != null ? pr.getCategory().getCategoryName() : null,
+                    (pr.getShop() != null ? pr.getShop().getShopId() : null),
+                    (pr.getShop() != null ? pr.getShop().getShopName() : null),
+                    (pr.getShop() != null ? pr.getShop().getLogoUrl() : null), // <-- NEW
                     pr.getPrice(),
                     pr.getDiscountPrice(),
                     pr.getRatingAvg() != null ? pr.getRatingAvg().doubleValue() : null,
@@ -138,13 +174,40 @@ public class ProductBrowseService {
         } finally { em.close(); }
     }
 
+    // ==== API gợi ý/đổ danh sách Shop cho ô lọc ====
+    public List<ShopOptionVM> shops(String keyword) {
+        EntityManager em = JPAConfig.getEntityManager();
+        try {
+            String where = "";
+            boolean hasKw = (keyword != null && !keyword.isBlank());
+            if (hasKw) where = " WHERE LOWER(s.shopName) LIKE :kw ";
+
+            Query q = em.createQuery(
+                "SELECT s.shopId, s.shopName FROM Shop s" + where + " ORDER BY s.shopName ASC"
+            );
+            if (hasKw) q.setParameter("kw", "%"+keyword.toLowerCase()+"%");
+            q.setMaxResults(50); // giới hạn cho nhẹ UI
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> rows = q.getResultList();
+            List<ShopOptionVM> out = new ArrayList<>(rows.size());
+            for (Object[] r : rows) {
+                out.add(new ShopOptionVM((Long) r[0], (String) r[1]));
+            }
+            return out;
+        } finally { em.close(); }
+    }
+
     // ==== API trang chi tiết ====
     public Product findById(Long id) {
         EntityManager em = JPAConfig.getEntityManager();
         try {
-            // Nạp sẵn category để JSP không bị LazyInitializationException
+            // Nạp sẵn category + shop để JSP không bị LazyInitializationException
             TypedQuery<Product> q = em.createQuery(
-                "SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.productId = :id",
+                "SELECT p FROM Product p " +
+                "LEFT JOIN FETCH p.category " +
+                "LEFT JOIN FETCH p.shop " +
+                "WHERE p.productId = :id",
                 Product.class
             );
             q.setParameter("id", id);
@@ -159,10 +222,10 @@ public class ProductBrowseService {
         EntityManager em = JPAConfig.getEntityManager();
         try {
             return em.createQuery(
-                    "SELECT pi.imageUrl FROM ProductImage pi WHERE pi.product = :p " +
-                    "ORDER BY CASE WHEN pi.isThumbnail = true THEN 0 ELSE 1 END, pi.id", String.class)
-                    .setParameter("p", p)
-                    .getResultList();
+                "SELECT pi.imageUrl FROM ProductImage pi WHERE pi.product = :p " +
+                "ORDER BY CASE WHEN pi.isThumbnail = true THEN 0 ELSE 1 END, pi.id", String.class)
+                .setParameter("p", p)
+                .getResultList();
         } finally { em.close(); }
     }
 }

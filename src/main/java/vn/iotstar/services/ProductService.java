@@ -1,10 +1,11 @@
-// src/main/java/vn/iotstar/services/ProductService.java
 package vn.iotstar.services;
 
 import java.math.BigDecimal;
 import java.util.List;
+
 import jakarta.persistence.*;
 import jakarta.servlet.http.HttpServletRequest;
+
 import vn.iotstar.configs.JPAConfig;
 import vn.iotstar.entities.Product;
 import vn.iotstar.entities.Shop;
@@ -15,7 +16,10 @@ public class ProductService {
 
     private final StatisticService helper = new StatisticService();
 
-    /** Lấy danh sách sản phẩm của vendor hiện tại */
+    /**
+     * Danh sách sản phẩm của vendor (dùng trong trang quản trị vendor).
+     * Đã JOIN FETCH shop và category để tránh Lazy khi hiển thị.
+     */
     public List<Product> getByVendor(HttpServletRequest req) {
         Long uid = SessionUtil.currentUserId(req);
         if (uid == null) return List.of();
@@ -27,9 +31,9 @@ public class ProductService {
         try {
             // JOIN FETCH để nạp sẵn quan hệ tránh lỗi LazyInitializationException
             return em.createQuery(
-                "SELECT DISTINCT p FROM Product p " +
+                "SELECT DISTINCT p FROM Product p " + // GIỮ LẠI: DISTINCT để tránh lặp kết quả do JOIN FETCH
                 "JOIN FETCH p.shop s " +
-                "LEFT JOIN FETCH p.category c " +
+                "LEFT JOIN FETCH p.category c " +    // GIỮ LẠI: FETCH category
                 "WHERE s.shopId = :sid " +
                 "ORDER BY p.productId DESC",
                 Product.class
@@ -99,7 +103,7 @@ public class ProductService {
         }
     }
 
-    /** Lấy chi tiết sản phẩm theo ID */
+    /** Lấy chi tiết sản phẩm theo ID (Nạp cả Shop và Category) */
     public Product findById(Long id) {
         EntityManager em = JPAConfig.getEntityManager();
         try {
@@ -116,6 +120,38 @@ public class ProductService {
         } finally {
             em.close();
         }
+    }
+
+    /** Lấy 1 product KÈM shop để render detail.jsp hiển thị shopName. */
+    public Product findByIdWithShop(Long id) {
+        EntityManager em = JPAConfig.getEntityManager();
+        try {
+            return em.createQuery(
+                "SELECT p FROM Product p " +
+                "JOIN FETCH p.shop " +
+                "WHERE p.productId = :id",
+                Product.class
+            ).setParameter("id", id)
+             .getSingleResult();
+        } finally { em.close(); }
+    }
+
+    /** List sản phẩm ACTIVE kèm shop để render list.jsp (có phân trang). */
+    public List<Product> findActiveWithShop(int page, int size) {
+        int first = Math.max(0, page) * Math.max(1, size);
+        EntityManager em = JPAConfig.getEntityManager();
+        try {
+            return em.createQuery(
+                "SELECT p FROM Product p " +
+                "JOIN FETCH p.shop " +
+                "WHERE p.status = :st " +
+                "ORDER BY p.productId DESC",
+                Product.class
+            ).setParameter("st", Product.ProductStatus.ACTIVE)
+             .setFirstResult(first)
+             .setMaxResults(size)
+             .getResultList();
+        } finally { em.close(); }
     }
 
     /** Cập nhật sản phẩm */
