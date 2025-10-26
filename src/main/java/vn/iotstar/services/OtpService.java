@@ -3,71 +3,62 @@ package vn.iotstar.services;
 
 import vn.iotstar.entities.User;
 import vn.iotstar.entities.UserOtp;
-import vn.iotstar.repositories.UserOtpRepository;
 import vn.iotstar.repositories.UserRepository;
-import vn.iotstar.utils.MailUtil;
+import vn.iotstar.repositories.UserOtpRepository;
 
 import java.time.LocalDateTime;
 import java.util.Random;
 
 public class OtpService {
 
-    private final UserOtpRepository otpRepo = new UserOtpRepository();
     private final UserRepository userRepo   = new UserRepository();
-    private static final Random RAND = new Random();
+    private final UserOtpRepository otpRepo = new UserOtpRepository();
+    private final MailService mailService   = new MailService();
 
-    public static class OtpResult {
-        public final boolean otpSaved;
-        public final boolean mailSent;
-        public OtpResult(boolean s, boolean m){ this.otpSaved=s; this.mailSent=m; }
+    private String random6() {
+        return String.format("%06d", new Random().nextInt(1_000_000));
     }
 
-    private String randomCode6() {
-        int n = RAND.nextInt(1_000_000);
-        return String.format("%06d", n);
-    }
-
-    /** Tạo OTP kích hoạt và cố gắng gửi mail. Không ném lỗi ra ngoài. */
-    public OtpResult createAndSendActivateOtp(User user) {
-        String code = randomCode6();
-        UserOtp otp = UserOtp.builder()
-                .user(user)
-                .purpose(UserOtp.Purpose.REGISTER)
-                .code(code)
-                .expiresAt(LocalDateTime.now().plusMinutes(10))
-                .build();
-        try {
-            // Xoá OTP cũ để gọn DB
-            otpRepo.deleteByUserAndPurpose(user, UserOtp.Purpose.REGISTER);
-            otpRepo.save(otp);
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-            return new OtpResult(false, false);
-        }
-
-        boolean mailed = MailUtil.send(
-                user.getEmail(),
-                "[BMTT Shop] Ma OTP kich hoat tai khoan",
-                "Ma OTP cua ban la: " + code + " (hieu luc 10 phut).");
-        return new OtpResult(true, mailed);
-    }
-
-    public OtpResult resendActivateOtp(String email) {
+    /** Gửi OTP kích hoạt (REGISTER) cho email đã đăng ký */
+    public boolean sendRegisterOtp(String email) {
         User u = userRepo.findByEmail(email);
-        if (u == null) return new OtpResult(false, false);
-        return createAndSendActivateOtp(u);
+        if (u == null) return false;
+
+        // Xoá OTP REGISTER cũ để tránh trùng
+        otpRepo.deleteByUserAndPurpose(u, UserOtp.Purpose.REGISTER);
+
+        // Tạo OTP mới
+        UserOtp otp = new UserOtp();
+        otp.setUser(u);
+        otp.setPurpose(UserOtp.Purpose.REGISTER);
+        otp.setCode(random6());
+        otp.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+        otpRepo.save(otp);
+
+        // Gửi email bằng MailService hiện tại của bạn
+        mailService.sendOtpEmail(u.getEmail(), otp.getCode(), "Kích hoạt tài khoản UTESHOP");
+        return true;
     }
 
-    /** Xác minh OTP; nếu đúng -> kích hoạt email cho user. */
+    /** Gửi lại OTP REGISTER */
+    public boolean resendRegisterOtp(String email) {
+        return sendRegisterOtp(email);
+    }
+
+    /** Xác minh OTP đăng ký; nếu đúng → kích hoạt email cho user */
     public boolean verifyActivateOtp(String email, String code) {
         User u = userRepo.findByEmail(email);
         if (u == null) return false;
+
+        // LƯU Ý: repo của bạn nhận thứ tự tham số: (user, purpose, code, now)
         UserOtp found = otpRepo.findValid(u, UserOtp.Purpose.REGISTER, code, LocalDateTime.now());
         if (found == null) return false;
 
-        // Đúng mã và còn hạn -> active + dọn OTP
+        // Kích hoạt tài khoản
         u.setIsEmailActive(true);
         userRepo.update(u);
+
+        // Dọn OTP REGISTER
         otpRepo.deleteByUserAndPurpose(u, UserOtp.Purpose.REGISTER);
         return true;
     }

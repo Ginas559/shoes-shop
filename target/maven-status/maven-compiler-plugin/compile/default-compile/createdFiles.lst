@@ -31,7 +31,6 @@ vn\iotstar\entities\Favorite.class
 vn\iotstar\entities\Coupon$CouponBuilder.class
 vn\iotstar\entities\UserOtp$UserOtpBuilder.class
 vn\iotstar\utils\AuthFilter.class
-vn\iotstar\services\OtpService$OtpResult.class
 vn\iotstar\entities\Shipper$ShipperBuilder.class
 vn\iotstar\services\OrderService.class
 vn\iotstar\utils\PasswordUtil.class

@@ -14,34 +14,26 @@ public class VerifyOtpServlet extends HttpServlet {
     private OtpService otpService;
 
     @Override
-    public void init() {
+    public void init() throws ServletException {
+        super.init();
         this.otpService = new OtpService();
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        String email = req.getParameter("email");
-        req.setAttribute("email", email);
-        req.setAttribute("pageTitle", "Xác minh OTP");
-        Object flash = req.getSession().getAttribute("flash");
-        if (flash != null) {
-            req.setAttribute("flash", flash.toString());
-            req.getSession().removeAttribute("flash");
-        }
         req.getRequestDispatcher("/WEB-INF/views/auth/verify.jsp").forward(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        String servletPath = req.getServletPath();
-        if ("/otp/resend".equals(servletPath)) {
+
+        String path = req.getServletPath();
+        if ("/otp/resend".equals(path)) {
             String email = req.getParameter("email");
-            OtpService.OtpResult r = otpService.resendActivateOtp(email);
-            req.getSession().setAttribute("flash", r.mailSent
-                    ? "Đã gửi lại OTP."
-                    : "Không gửi được email. Vui lòng thử lại sau.");
+            boolean ok = otpService.resendRegisterOtp(email);
+            req.getSession().setAttribute("flash", ok ? "Đã gửi lại OTP." : "Không gửi được OTP. Vui lòng thử lại.");
             resp.sendRedirect(req.getContextPath() + "/verify?email=" + email);
             return;
         }
