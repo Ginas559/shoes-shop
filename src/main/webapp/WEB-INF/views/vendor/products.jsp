@@ -1,18 +1,29 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
+<c:choose>
+  <c:when test="${empty p}">
+    <c:set var="actionPath" value="/vendor/products/add"/>
+  </c:when>
+  <c:otherwise>
+    <c:set var="actionPath" value="/vendor/products/update"/>
+  </c:otherwise>
+</c:choose>
+
 <main class="container py-4">
-  <h2 class="mb-3">Quản lý sản phẩm</h2>
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="mb-0">Quản lý sản phẩm</h2>
+    <c:if test="${not empty shop}">
+      <span class="text-muted">Shop: <strong>${shop.shopName}</strong></span>
+    </c:if>
+  </div>
 
   <div class="card shadow-sm mb-3">
     <div class="card-body">
       <h5 class="card-title">Thêm / Cập nhật sản phẩm</h5>
 
-      <!-- THÊM enctype -->
-      <form method="post"
-            enctype="multipart/form-data"
-            action="<c:url value='/vendor/products/${empty p ? "add" : "update"}'/>"
-            class="row g-3">
+      <form method="post" enctype="multipart/form-data"
+            action="<c:url value='${actionPath}'/>" class="row g-3">
         <c:if test="${not empty p}">
           <input type="hidden" name="productId" value="${p.productId}"/>
         </c:if>
@@ -37,19 +48,24 @@
           <select name="categoryId" class="form-select" required>
             <option value="">-- Chọn danh mục --</option>
             <c:forEach var="c" items="${categories}">
-              <option value="${c.categoryId}"
-                ${not empty p && p.category.categoryId == c.categoryId ? 'selected' : ''}>
+              <option value="${c.categoryId}" ${not empty p && p.category.categoryId == c.categoryId ? 'selected' : ''}>
                 ${c.categoryName}
               </option>
             </c:forEach>
           </select>
         </div>
 
-        <!-- THÊM input ảnh -->
         <div class="col-md-6">
           <label class="form-label">Ảnh sản phẩm</label>
           <input type="file" name="image" accept="image/*" class="form-control"/>
           <small class="text-muted">Chọn 1 ảnh — sẽ lấy làm thumbnail.</small>
+
+          <!-- Preview khi sửa -->
+          <c:if test="${not empty thumbEditing}">
+            <div class="mt-2">
+              <img src="${thumbEditing}" width="120" class="rounded shadow-sm"/>
+            </div>
+          </c:if>
         </div>
 
         <c:if test="${not empty p}">
@@ -79,9 +95,12 @@
           <thead class="table-light">
           <tr>
             <th>ID</th>
+            <th>Ảnh</th>
             <th>Tên</th>
+            <th>Danh mục</th>
             <th>Giá</th>
             <th>Tồn</th>
+            <th>Shop</th>
             <th>Trạng thái</th>
             <th width="180">Hành động</th>
           </tr>
@@ -90,14 +109,45 @@
           <c:forEach var="it" items="${products}">
             <tr>
               <td>${it.productId}</td>
+
+              <!-- Ảnh thumbnail -->
+              <td>
+                <c:choose>
+                  <c:when test="${not empty thumbnails[it.productId]}">
+                    <img src="${thumbnails[it.productId]}" width="60" class="rounded shadow-sm"/>
+                  </c:when>
+                  <c:otherwise>
+                    <span class="text-muted">Không có</span>
+                  </c:otherwise>
+                </c:choose>
+              </td>
+
               <td>${it.productName}</td>
+
+              <td>
+                <c:choose>
+                  <c:when test="${not empty it.category}">${it.category.categoryName}</c:when>
+                  <c:otherwise>—</c:otherwise>
+                </c:choose>
+              </td>
+
               <td>${it.price}</td>
               <td>${it.stock}</td>
+
+              <td>
+                <c:choose>
+                  <c:when test="${not empty it.shop}">${it.shop.shopName}</c:when>
+                  <c:when test="${not empty shop}">${shop.shopName}</c:when>
+                  <c:otherwise>—</c:otherwise>
+                </c:choose>
+              </td>
+
               <td>
                 <span class="badge bg-${it.status == 'ACTIVE' ? 'success' : 'secondary'}">
                   ${it.status}
                 </span>
               </td>
+
               <td>
                 <a class="btn btn-sm btn-outline-primary"
                    href="<c:url value='/vendor/products/edit?id=${it.productId}'/>">Sửa</a>

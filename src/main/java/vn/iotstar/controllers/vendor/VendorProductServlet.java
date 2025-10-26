@@ -1,3 +1,4 @@
+// src/main/java/vn/iotstar/controllers/vendor/VendorProductServlet.java
 package vn.iotstar.controllers.vendor;
 
 import jakarta.servlet.ServletException;
@@ -6,24 +7,28 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 
+import vn.iotstar.configs.CloudinaryConfig;
 import vn.iotstar.entities.Product;
-import vn.iotstar.services.ProductService;
+import vn.iotstar.entities.Shop;
 import vn.iotstar.services.CategoryService;
 import vn.iotstar.services.ProductImageService;
-import vn.iotstar.configs.*;
+import vn.iotstar.services.ProductService;
+import vn.iotstar.services.StatisticService;
+import vn.iotstar.utils.SessionUtil;
 
 @WebServlet(urlPatterns = {"/vendor/products", "/vendor/products/*"})
 @MultipartConfig(maxFileSize = 10 * 1024 * 1024) // 10MB
 public class VendorProductServlet extends HttpServlet {
+
     private final ProductService productService = new ProductService();
     private final CategoryService categoryService = new CategoryService();
     private final ProductImageService productImageService = new ProductImageService();
+    private final StatisticService helper = new StatisticService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -31,9 +36,23 @@ public class VendorProductServlet extends HttpServlet {
 
         String path = req.getPathInfo();
 
+        // Tên shop để hiển thị góc trên
+        Long uid = SessionUtil.currentUserId(req);
+        Shop shop = (uid != null) ? helper.findShopByOwner(uid) : null;
+        req.setAttribute("shop", shop);
+
         if (path == null || "/".equals(path)) {
             List<Product> list = productService.getByVendor(req);
             req.setAttribute("products", list);
+
+            // gom thumbnails theo productId -> url
+            Map<Long, String> thumbnails = new HashMap<>();
+            for (Product p : list) {
+                thumbnails.put(p.getProductId(),
+                        productImageService.getThumbnailUrl(p.getProductId()));
+            }
+            req.setAttribute("thumbnails", thumbnails);
+
             req.setAttribute("categories", categoryService.findAll());
             req.getRequestDispatcher("/WEB-INF/views/vendor/products.jsp").forward(req, resp);
             return;
@@ -41,8 +60,14 @@ public class VendorProductServlet extends HttpServlet {
 
         if ("/edit".equals(path)) {
             Long id = Long.valueOf(req.getParameter("id"));
-            req.setAttribute("p", productService.findById(id));
+            Product p = productService.findById(id);
+            req.setAttribute("p", p);
             req.setAttribute("categories", categoryService.findAll());
+
+            // preview thumbnail cho sản phẩm đang sửa
+            String thumb = productImageService.getThumbnailUrl(id);
+            req.setAttribute("thumbEditing", thumb);
+
             req.getRequestDispatcher("/WEB-INF/views/vendor/products.jsp").forward(req, resp);
             return;
         }
@@ -57,10 +82,8 @@ public class VendorProductServlet extends HttpServlet {
         String path = req.getPathInfo();
 
         if ("/add".equals(path)) {
-            // 1) Tạo product -> nhận về productId
-        	Long productId = productService.add(req); // giờ đã trả về ID
+            Long productId = productService.add(req);
 
-            // 2) Nếu có file ảnh -> upload Cloudinary -> lưu Product_Image
             Part part = req.getPart("image");
             if (part != null && part.getSize() > 0) {
                 String url = uploadToCloudinary(part);
@@ -78,7 +101,6 @@ public class VendorProductServlet extends HttpServlet {
             Part part = req.getPart("image");
             if (part != null && part.getSize() > 0) {
                 String url = uploadToCloudinary(part);
-                // bỏ tick thumbnail cũ & set ảnh mới là thumbnail
                 productImageService.clearThumbnail(productId);
                 productImageService.addImage(productId, url, true);
             }
@@ -100,15 +122,15 @@ public class VendorProductServlet extends HttpServlet {
     private String uploadToCloudinary(Part part) throws IOException {
         Cloudinary cloud = CloudinaryConfig.getCloudinary();
         try (InputStream is = part.getInputStream()) {
-            // Đọc input stream thành byte array
             byte[] data = is.readAllBytes();
-
-            Map<?, ?> res = cloud.uploader().upload(data, ObjectUtils.asMap(
+            Map<?, ?> res = cloud.uploader().upload(
+                data,
+                ObjectUtils.asMap(
                     "folder", "shoes-shop/products",
                     "resource_type", "image"
-            ));
+                )
+            );
             return String.valueOf(res.get("secure_url"));
         }
     }
-
 }

@@ -63,6 +63,7 @@ public class Product {
     @Column(name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+    
 
     public enum ProductStatus {
         ACTIVE,

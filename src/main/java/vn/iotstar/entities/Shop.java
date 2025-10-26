@@ -4,6 +4,7 @@ package vn.iotstar.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "[Shop]")
@@ -43,6 +44,9 @@ public class Shop {
     @Column(name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @OneToMany(mappedBy = "shop")
+    private List<Product> products;
 
     public enum ShopStatus {
         ACTIVE,
