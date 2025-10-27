@@ -46,6 +46,9 @@ public class Shop {
     @Column(name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "cover_url", length = 500)
+    private String coverUrl;
     
     // Đã hợp nhất, chỉ giữ lại một định nghĩa với khởi tạo mặc định.
     // Quan hệ ngược để tránh N+1 và hỗ trợ hiển thị shopName từ Product

@@ -1,51 +1,64 @@
 <!-- filepath: src/main/webapp/WEB-INF/views/vendor/shop-profile.jsp -->
 <%@ page contentType="text/html; charset=UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
 
-<div class="container mt-4">
-  <h3 class="mb-3">Hồ sơ Shop</h3>
+<div class="container py-4">
+  <h3 class="mb-3">Hồ sơ cửa hàng</h3>
 
-  <form action="${pageContext.request.contextPath}/vendor/shop/update"
-        method="post" enctype="multipart/form-data" class="card p-3">
-
+  <form action="${ctx}/vendor/shop" method="post" enctype="multipart/form-data" class="card p-3 shadow-sm">
     <div class="mb-3">
-      <label class="form-label">Tên shop</label>
-      <input class="form-control" name="shopName" value="${shop.shopName}">
+      <label class="form-label">Tên cửa hàng</label>
+      <input type="text" class="form-control" name="shopName" value="${shop.shopName}" required />
     </div>
 
     <div class="mb-3">
       <label class="form-label">Mô tả</label>
-      <textarea class="form-control" rows="4" name="description">${shop.description}</textarea>
+      <textarea class="form-control" name="description" rows="3">${shop.description}</textarea>
     </div>
 
-    <div class="row g-3 align-items-center mb-3">
-      <div class="col-auto">
-        <c:choose>
-          <c:when test="${not empty shop.logoUrl}">
-            <img id="logoPreview" src="${shop.logoUrl}" alt="Logo"
-                 style="width:96px;height:96px;border-radius:12px;object-fit:cover;">
-          </c:when>
-          <c:otherwise>
-            <img id="logoPreview" src="https://via.placeholder.com/96?text=Logo"
-                 alt="Logo" style="width:96px;height:96px;border-radius:12px;object-fit:cover;">
-          </c:otherwise>
-        </c:choose>
+    <div class="row">
+      <!-- Logo -->
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Logo (Avatar)</label>
+        <input type="file" class="form-control" name="logo" accept="image/*" />
+        <div class="mt-2 d-flex align-items-center gap-3">
+          <c:choose>
+            <c:when test="${not empty shop.logoUrl}">
+              <img src="${shop.logoUrl}" class="rounded-circle border shadow-sm"
+                   style="width:96px;height:96px;object-fit:cover;">
+            </c:when>
+            <c:otherwise>
+              <img src="https://via.placeholder.com/96?text=Logo" class="rounded-circle border shadow-sm"
+                   style="width:96px;height:96px;object-fit:cover;">
+            </c:otherwise>
+          </c:choose>
+          <small class="text-muted">Chọn ảnh mới để thay logo (tuỳ chọn).</small>
+        </div>
       </div>
-      <div class="col">
-        <label class="form-label">Logo (tuỳ chọn)</label>
-        <input class="form-control" type="file" name="logo" accept="image/*" onchange="previewLogo(event)">
-        <div class="form-text">Chọn ảnh mới nếu muốn thay đổi logo.</div>
+
+      <!-- Cover -->
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Ảnh bìa (Cover)</label>
+        <input type="file" class="form-control" name="cover" accept="image/*" />
+        <div class="mt-2">
+          <c:choose>
+            <c:when test="${not empty shop.coverUrl}">
+              <img src="${shop.coverUrl}" class="img-fluid rounded border"
+                   style="width:100%;max-height:220px;object-fit:cover;">
+            </c:when>
+            <c:otherwise>
+              <img src="https://via.placeholder.com/800x220?text=Cover" class="img-fluid rounded border"
+                   style="width:100%;max-height:220px;object-fit:cover;">
+            </c:otherwise>
+          </c:choose>
+        </div>
       </div>
     </div>
 
-    <button class="btn btn-primary">Lưu thay đổi</button>
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+      <a href="${ctx}/vendor/dashboard" class="btn btn-secondary">Hủy</a>
+    </div>
   </form>
 </div>
-
-<script>
-  function previewLogo(e){
-    const f = e.target.files && e.target.files[0];
-    if(!f) return;
-    document.getElementById('logoPreview').src = URL.createObjectURL(f);
-  }
-</script>

@@ -89,12 +89,13 @@
         <c:if test="${not empty product.shop}">
           <div class="d-flex align-items-center gap-2 mb-2">
             <c:if test="${not empty product.shop.logoUrl}">
-              <img src="${ctx}${product.shop.logoUrl}"
-                   alt="<c:out value='${product.shop.shopName}'/>"
-                   class="rounded border"
-                   style="width:40px;height:40px;object-fit:cover"
-                   onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
-            </c:if>
+			  <img src="${product.shop.logoUrl}"
+			       alt="<c:out value='${product.shop.shopName}'/>"
+			       class="rounded-circle border shadow-sm"
+			       style="width:172px;height:172px;object-fit:cover;"
+			       onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
+			</c:if>
+
 
             <div>
               <div class="small text-muted">Của shop</div>
