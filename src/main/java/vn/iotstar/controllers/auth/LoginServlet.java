@@ -44,6 +44,12 @@ public class LoginServlet extends HttpServlet {
         try {
             User u = authService.login(email, password); // ném IllegalStateException khi lỗi
             HttpSession session = req.getSession(true);
+            
+            // ----------------------------------------------------
+            // BỔ SUNG: Lưu đối tượng User đầy đủ vào Session
+            session.setAttribute("currentUser", u); 
+            // ----------------------------------------------------
+            
             session.setAttribute("userId", u.getId());
             session.setAttribute("email", u.getEmail());
             session.setAttribute("role", u.getRole().name()); // USER | ADMIN | VENDOR | ShIPPER

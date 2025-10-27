@@ -15,6 +15,7 @@ D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\TestCloudinaryServle
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\user\AddressServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\user\ProfileServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\ShopFeaturedServlet.java
+D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorChatServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorDashboardServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorOrderServlet.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorProductServlet.java
@@ -24,6 +25,7 @@ D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\entities\Address.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\entities\Cart.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\entities\CartItem.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\entities\Category.java
+D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\entities\ChatMessage.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\entities\Coupon.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\entities\Favorite.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\entities\Order.java
@@ -54,6 +56,7 @@ D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\ProductImageService.jav
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\ProductService.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\ShopFeaturedService.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\services\StatisticService.java
+D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\sockets\ChatEndpoint.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\utils\AuthFilter.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\utils\MailUtil.java
 D:\DoAn\LTW\shoes-shop\src\main\java\vn\iotstar\utils\PasswordUtil.java

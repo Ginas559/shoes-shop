@@ -46,8 +46,10 @@ vn\iotstar\services\ShopFeaturedService.class
 vn\iotstar\services\ProductBrowseService$ShopOptionVM.class
 vn\iotstar\services\ProductImageService.class
 vn\iotstar\services\MailService.class
+vn\iotstar\sockets\ChatEndpoint.class
 vn\iotstar\configs\JPAConfig.class
 vn\iotstar\entities\Shop$ShopBuilder.class
+vn\iotstar\controllers\vendor\VendorChatServlet.class
 vn\iotstar\entities\Shop.class
 vn\iotstar\controllers\auth\LogoutServlet.class
 vn\iotstar\entities\Promotion.class
@@ -55,6 +57,7 @@ vn\iotstar\controllers\auth\VerifyOtpServlet.class
 vn\iotstar\controllers\vendor\VendorShopServlet.class
 vn\iotstar\entities\Cart.class
 vn\iotstar\entities\ProductComment$ProductCommentBuilder.class
+vn\iotstar\entities\ChatMessage.class
 vn\iotstar\entities\Payment$PaymentMethod.class
 vn\iotstar\repositories\UserOtpRepository.class
 vn\iotstar\entities\Promotion$PromotionBuilder.class
