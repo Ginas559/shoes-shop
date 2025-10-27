@@ -43,16 +43,19 @@ public class LoginServlet extends HttpServlet {
 
         try {
             User u = authService.login(email, password); // ném IllegalStateException khi lỗi
+
             HttpSession session = req.getSession(true);
-            
-            // ----------------------------------------------------
-            // BỔ SUNG: Lưu đối tượng User đầy đủ vào Session
-            session.setAttribute("currentUser", u); 
-            // ----------------------------------------------------
-            
+            session.setAttribute("currentUser", u);
             session.setAttribute("userId", u.getId());
             session.setAttribute("email", u.getEmail());
-            session.setAttribute("role", u.getRole().name()); // USER | ADMIN | VENDOR | ShIPPER
+            session.setAttribute("role", u.getRole().name()); // USER | ADMIN | VENDOR | SHIPPER
+
+            // ⭐ Thêm hỗ trợ STAFF (USER thuộc 1 shop)
+            if (u.getStaffShop() != null) {
+                session.setAttribute("staffShopId", u.getStaffShop().getShopId());
+            } else {
+                session.removeAttribute("staffShopId");
+            }
 
             redirectByRole(resp, req.getContextPath(), u.getRole().name());
         } catch (IllegalStateException ex) {
@@ -64,6 +67,7 @@ public class LoginServlet extends HttpServlet {
             req.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(req, resp);
         }
     }
+
 
     private void redirectByRole(HttpServletResponse resp, String ctx, String role) throws IOException {
         if ("ADMIN".equalsIgnoreCase(role)) {
