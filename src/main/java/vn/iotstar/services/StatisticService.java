@@ -63,4 +63,15 @@ public class StatisticService {
                 .getResultList();
         } finally { em.close(); }
     }
+    
+ // filepath: src/main/java/vn/iotstar/services/StatisticService.java
+    public Shop findShopById(Long shopId) {
+        EntityManager em = JPAConfig.getEntityManager();
+        try {
+            return em.find(Shop.class, shopId);
+        } finally {
+            em.close();
+        }
+    }
+
 }

@@ -1,4 +1,4 @@
-// src/main/java/vn/iotstar/controllers/vendor/VendorProductServlet.java
+// filepath: src/main/java/vn/iotstar/controllers/vendor/VendorProductServlet.java
 package vn.iotstar.controllers.vendor;
 
 import jakarta.servlet.ServletException;
@@ -15,6 +15,7 @@ import com.cloudinary.utils.ObjectUtils;
 import vn.iotstar.configs.CloudinaryConfig;
 import vn.iotstar.entities.Product;
 import vn.iotstar.entities.Shop;
+import vn.iotstar.entities.User;
 import vn.iotstar.services.CategoryService;
 import vn.iotstar.services.ProductImageService;
 import vn.iotstar.services.ProductService;
@@ -22,7 +23,7 @@ import vn.iotstar.services.StatisticService;
 import vn.iotstar.utils.SessionUtil;
 
 @WebServlet(urlPatterns = {"/vendor/products", "/vendor/products/*"})
-@MultipartConfig(maxFileSize = 10 * 1024 * 1024) // 10MB
+@MultipartConfig(maxFileSize = 10 * 1024 * 1024)
 public class VendorProductServlet extends HttpServlet {
 
     private final ProductService productService = new ProductService();
@@ -30,29 +31,60 @@ public class VendorProductServlet extends HttpServlet {
     private final ProductImageService productImageService = new ProductImageService();
     private final StatisticService helper = new StatisticService();
 
+    /** Resolve shop cho owner/staff. Đồng bộ staffShopId nếu cần. */
+    private Shop resolveShop(HttpServletRequest req) {
+        Long uid  = SessionUtil.currentUserId(req);
+        String role = SessionUtil.currentRole(req);
+        HttpSession ss = req.getSession(false);
+        Long staffShopId = (ss != null && ss.getAttribute("staffShopId") != null)
+                ? (Long) ss.getAttribute("staffShopId") : null;
+
+        if ("VENDOR".equals(role)) {
+            return helper.findShopByOwner(uid);
+        }
+        if ("USER".equals(role)) {
+            Long sid = staffShopId;
+            if (sid == null && ss != null) {
+                Object cu = ss.getAttribute("currentUser");
+                if (cu instanceof User u && u.getStaffShop() != null) {
+                    sid = u.getStaffShop().getShopId();
+                    ss.setAttribute("staffShopId", sid);
+                }
+            }
+            return (sid != null) ? helper.findShopById(sid) : null;
+        }
+        return null;
+    }
+
+    private void ensureOwned(Shop shop, Product p, HttpServletResponse resp) throws IOException {
+        if (p == null || shop == null || p.getShop() == null
+                || !Objects.equals(p.getShop().getShopId(), shop.getShopId())) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Không có quyền thao tác sản phẩm này.");
+        }
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
         String path = req.getPathInfo();
-
-        // Tên shop để hiển thị góc trên
-        Long uid = SessionUtil.currentUserId(req);
-        Shop shop = (uid != null) ? helper.findShopByOwner(uid) : null;
+        Shop shop = resolveShop(req);
+        if (shop == null) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Không xác định được shop.");
+            return;
+        }
         req.setAttribute("shop", shop);
 
         if (path == null || "/".equals(path)) {
-            List<Product> list = productService.getByVendor(req);
+            // chỉ lấy sản phẩm của shop hiện tại
+            List<Product> list = productService.getByShopId(shop.getShopId());
             req.setAttribute("products", list);
 
-            // gom thumbnails theo productId -> url
             Map<Long, String> thumbnails = new HashMap<>();
             for (Product p : list) {
-                thumbnails.put(p.getProductId(),
-                        productImageService.getThumbnailUrl(p.getProductId()));
+                thumbnails.put(p.getProductId(), productImageService.getThumbnailUrl(p.getProductId()));
             }
             req.setAttribute("thumbnails", thumbnails);
-
             req.setAttribute("categories", categoryService.findAll());
             req.getRequestDispatcher("/WEB-INF/views/vendor/products.jsp").forward(req, resp);
             return;
@@ -61,13 +93,11 @@ public class VendorProductServlet extends HttpServlet {
         if ("/edit".equals(path)) {
             Long id = Long.valueOf(req.getParameter("id"));
             Product p = productService.findById(id);
+            ensureOwned(shop, p, resp); if (resp.isCommitted()) return;
+
             req.setAttribute("p", p);
             req.setAttribute("categories", categoryService.findAll());
-
-            // preview thumbnail cho sản phẩm đang sửa
-            String thumb = productImageService.getThumbnailUrl(id);
-            req.setAttribute("thumbEditing", thumb);
-
+            req.setAttribute("thumbEditing", productImageService.getThumbnailUrl(id));
             req.getRequestDispatcher("/WEB-INF/views/vendor/products.jsp").forward(req, resp);
             return;
         }
@@ -80,37 +110,44 @@ public class VendorProductServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String path = req.getPathInfo();
+        Shop shop = resolveShop(req);
+        if (shop == null) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Không xác định được shop.");
+            return;
+        }
 
         if ("/add".equals(path)) {
-            Long productId = productService.add(req);
-
+            Long productId = productService.addForShop(req, shop.getShopId()); // gán shopId tại server
             Part part = req.getPart("image");
             if (part != null && part.getSize() > 0) {
                 String url = uploadToCloudinary(part);
                 productImageService.addImage(productId, url, true);
             }
-
             resp.sendRedirect(req.getContextPath() + "/vendor/products");
             return;
         }
 
         if ("/update".equals(path)) {
-            productService.update(req);
-
             Long productId = Long.valueOf(req.getParameter("productId"));
+            Product p = productService.findById(productId);
+            ensureOwned(shop, p, resp); if (resp.isCommitted()) return;
+
+            productService.updateForShop(req, shop.getShopId());   // đảm bảo chỉ cập nhật trong shop
             Part part = req.getPart("image");
             if (part != null && part.getSize() > 0) {
                 String url = uploadToCloudinary(part);
                 productImageService.clearThumbnail(productId);
                 productImageService.addImage(productId, url, true);
             }
-
             resp.sendRedirect(req.getContextPath() + "/vendor/products");
             return;
         }
 
         if ("/delete".equals(path)) {
             Long id = Long.valueOf(req.getParameter("productId"));
+            Product p = productService.findById(id);
+            ensureOwned(shop, p, resp); if (resp.isCommitted()) return;
+
             productService.softDelete(id);
             resp.sendRedirect(req.getContextPath() + "/vendor/products");
             return;
