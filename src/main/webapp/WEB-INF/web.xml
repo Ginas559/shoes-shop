@@ -100,6 +100,30 @@
     <url-pattern>/order/*</url-pattern>
   </servlet-mapping>
 
+  <!-- Recent Viewed: xem toàn bộ lịch sử đã xem -->
+  <servlet>
+    <servlet-name>RecentViewedServlet</servlet-name>
+    <servlet-class>vn.iotstar.controllers.guest.RecentViewedServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>RecentViewedServlet</servlet-name>
+    <url-pattern>/recent</url-pattern>
+  </servlet-mapping>
+
+  <!-- Favorite (Wishlist) -->
+  <servlet>
+    <servlet-name>FavoriteServlet</servlet-name>
+    <servlet-class>vn.iotstar.controllers.guest.FavoriteServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FavoriteServlet</servlet-name>
+    <url-pattern>/favorite/toggle</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>FavoriteServlet</servlet-name>
+    <url-pattern>/favorites</url-pattern>
+  </servlet-mapping>
+
   <welcome-file-list>
     <welcome-file>index.jsp</welcome-file>
   </welcome-file-list>

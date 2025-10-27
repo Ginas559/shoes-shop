@@ -2,4 +2,7 @@
 <sitemesh>
   <!-- DÙNG tên file TƯƠNG ĐỐI, SiteMesh sẽ tự prepend /WEB-INF/decorators/ -->
   <mapping path="/*" decorator="web.jsp"/>
+
+  <!-- ✅ Không decorate các API JSON để tránh bị bọc HTML -->
+  <exclusion path="/favorite/*"/>
 </sitemesh>
