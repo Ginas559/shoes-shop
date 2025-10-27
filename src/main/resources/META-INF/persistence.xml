@@ -19,11 +19,14 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 		<class>vn.iotstar.entities.Payment</class>
 		<class>vn.iotstar.entities.UserOtp</class>
 
-		<!-- ✅ Thêm entity ghi nhận sản phẩm đã xem -->
+		<!-- ✅ Đã xem gần đây -->
 		<class>vn.iotstar.entities.ViewedProduct</class>
 
-		<!-- ✅ Thêm entity Yêu thích -->
+		<!-- ✅ Yêu thích -->
 		<class>vn.iotstar.entities.Favorite</class>
+
+		<!-- ✅ THÊM MỚI: Bình luận sản phẩm (để Hibernate auto-DDL tạo cột parent_comment_id) -->
+		<class>vn.iotstar.entities.ProductComment</class>
 
 		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 

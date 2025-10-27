@@ -18,7 +18,8 @@ import java.util.List;
 
 /**
  * FavoriteService
- * - Sửa lỗi UnknownPathException: dùng entity reference thay vì f.user.userId
+ * - Lấy danh sách yêu thích kèm ảnh thumbnail (ưu tiên is_thumbnail = 1)
+ * - Sửa đường dẫn ảnh "/assset/" -> "/assets/" ngay trong SQL để an toàn
  * - Giữ nguyên toàn bộ logic khác
  */
 public class FavoriteService {
@@ -85,7 +86,7 @@ public class FavoriteService {
         try {
             String sql =
                 "SELECT p.product_id, p.product_name, p.price, p.discount_price, " +
-                "       COALESCE(pi.image_url, '') AS image_url " +
+                "       COALESCE(REPLACE(pi.image_url, '/assset/', '/assets/'), '') AS image_url " +  // <— fix sai chính tả
                 "FROM Favorite f " +
                 "JOIN Product p ON p.product_id = f.product_id " +
                 "OUTER APPLY ( " +
@@ -95,7 +96,7 @@ public class FavoriteService {
                 "   ORDER BY CASE WHEN is_thumbnail = 1 THEN 0 ELSE 1 END, image_id ASC " +
                 ") pi " +
                 "WHERE f.user_id = :uid " +
-                "ORDER BY f.created_at DESC";
+                "ORDER BY ISNULL(f.created_at, '1900-01-01') DESC, f.favorite_id DESC";
 
             Query q = em.createNativeQuery(sql);
             q.setParameter("uid", userId);

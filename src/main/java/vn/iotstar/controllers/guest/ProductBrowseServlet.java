@@ -17,6 +17,16 @@ import java.util.ArrayList;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
 
+/**
+ * Lưu ý cập nhật:
+ * - Bổ sung nạp dữ liệu Review/Comment bằng reflection:
+ *   + reviewStats  {avg(double), count(long)}
+ *   + reviews      List<...>  (cần các field JSP dùng: userName, createdAt, rating, commentText, imageUrl, videoUrl)
+ *   + userReview   1 review của chính user (nếu có)
+ *   + canReview    boolean
+ *   + comments     List<...>  (cần: userName, createdAt, content)
+ * - Nếu thiếu service tương ứng -> đặt mặc định an toàn, không làm vỡ trang.
+ */
 public class ProductBrowseServlet extends HttpServlet {
     private final ProductBrowseService svc = new ProductBrowseService();
 
@@ -129,6 +139,10 @@ public class ProductBrowseServlet extends HttpServlet {
                 }
                 // ====== [END FAVORITE HOOK] ======
 
+                // ====== [REVIEW HOOK - user logged in] ======
+                loadReviewsAndComments(req, p.getProductId(), userId);
+                // ====== [END REVIEW HOOK] ======
+
             } else {
                 req.setAttribute("viewedDebug", "SKIP — no userId in session");
                 System.out.println("[Viewed] SKIP — no userId in session");
@@ -143,14 +157,24 @@ public class ProductBrowseServlet extends HttpServlet {
                     req.setAttribute("isFav", false);
                     req.setAttribute("favoriteCount", 0L);
                 }
+
+                // ====== [REVIEW HOOK - guest] ======
+                loadReviewsAndComments(req, p.getProductId(), null);
+                // ====== [END REVIEW HOOK] ======
             }
         } catch (ClassNotFoundException e) {
             req.setAttribute("viewedDebug", "SKIP — ViewedService not found");
             System.out.println("[Viewed] SKIP — ViewedService class not found");
+
+            // vẫn nạp review/comment dù thiếu ViewedService
+            loadReviewsAndComments(req, p.getProductId(), extractUserIdFromSession(req.getSession(false)));
         } catch (Exception e) {
             req.setAttribute("viewedDebug", "ERROR — " + e.getClass().getSimpleName() + ": " + e.getMessage());
             System.out.println("[Viewed] ERROR — " + e.getMessage());
             log("[ProductBrowseServlet] Viewed hook error: " + e.getMessage());
+
+            // vẫn nạp review/comment nếu có lỗi Viewed
+            loadReviewsAndComments(req, p.getProductId(), extractUserIdFromSession(req.getSession(false)));
         }
         // ====== [END VIEWED HOOK + LOG] ======
 
@@ -158,6 +182,123 @@ public class ProductBrowseServlet extends HttpServlet {
         req.setAttribute("product", p);
         req.setAttribute("images", svc.imagesOf(p));
         req.getRequestDispatcher("/WEB-INF/views/products/detail.jsp").forward(req, resp);
+    }
+
+    /** Nạp reviewStats/reviews/userReview/canReview/comments bằng reflection (an toàn khi service chưa sẵn). */
+    private void loadReviewsAndComments(HttpServletRequest req, Long productId, Long userId) {
+        // ==== Defaults trước để trang luôn chạy ====
+        req.setAttribute("reviewStats", new SimpleStats(0.0, 0L));
+        req.setAttribute("reviews", new ArrayList<>());
+        req.setAttribute("userReview", null);
+        req.setAttribute("canReview", Boolean.FALSE);
+        req.setAttribute("comments", new ArrayList<>());
+
+        // ---- ReviewService ----
+        try {
+            Class<?> rCls = Class.forName("vn.iotstar.services.ReviewService");
+            Object rSvc = rCls.getDeclaredConstructor().newInstance();
+
+            // stats(productId) -> object có getAvg()/getAverage()/avg và getCount()/getTotal()/count
+            try {
+                Method mStats = rCls.getMethod("stats", Long.class);
+                Object statsObj = mStats.invoke(rSvc, productId);
+                double avg = readDouble(statsObj, "getAvg", "getAverage", "avg");
+                long cnt   = readLong(statsObj, "getCount", "getTotal", "count");
+                req.setAttribute("reviewStats", new SimpleStats(avg, cnt));
+            } catch (NoSuchMethodException ns) {
+                // fallback: list để tính count (avg = 0 nếu chưa có)
+                try {
+                    Method mList = rCls.getMethod("list", Long.class, Integer.class);
+                    Object list = mList.invoke(rSvc, productId, Integer.valueOf(10));
+                    if (list instanceof List) {
+                        int c = ((List<?>) list).size();
+                        req.setAttribute("reviewStats", new SimpleStats(0.0, c));
+                    }
+                } catch (Exception ignore) {}
+            }
+
+            // reviews(productId, limit)
+            try {
+                Method mList = rCls.getMethod("list", Long.class, Integer.class);
+                @SuppressWarnings("unchecked")
+                List<?> rvList = (List<?>) mList.invoke(rSvc, productId, Integer.valueOf(10));
+                if (rvList != null) req.setAttribute("reviews", rvList);
+            } catch (NoSuchMethodException ns) {
+                // có thể service dùng tên khác: findLatest
+                try {
+                    Method mList2 = rCls.getMethod("findLatest", Long.class, Integer.class);
+                    @SuppressWarnings("unchecked")
+                    List<?> rvList2 = (List<?>) mList2.invoke(rSvc, productId, Integer.valueOf(10));
+                    if (rvList2 != null) req.setAttribute("reviews", rvList2);
+                } catch (Exception ignore) {}
+            }
+
+            // userReview(productId, userId)
+            if (userId != null) {
+                try {
+                    Method mMy = rCls.getMethod("findByUser", Long.class, Long.class);
+                    Object my = mMy.invoke(rSvc, productId, userId);
+                    req.setAttribute("userReview", my);
+                } catch (Exception ignore) {}
+            }
+
+            // canReview(productId, userId)
+            try {
+                boolean can = false;
+                if (userId != null) {
+                    try {
+                        Method mCan = rCls.getMethod("canReview", Long.class, Long.class);
+                        Object r = mCan.invoke(rSvc, productId, userId);
+                        can = toBool(r);
+                    } catch (NoSuchMethodException miss) {
+                        // nếu service không có, default: có login là cho review
+                        can = true;
+                    }
+                }
+                req.setAttribute("canReview", can);
+            } catch (Exception ignore) {}
+
+        } catch (ClassNotFoundException notFound) {
+            System.out.println("[Review] SKIP — ReviewService not found");
+            // giữ defaults
+        } catch (Exception e) {
+            System.out.println("[Review] ERROR — " + e.getMessage());
+            // giữ defaults
+        }
+
+        // ---- CommentService ----
+        try {
+            Class<?> cCls = Class.forName("vn.iotstar.services.CommentService");
+            Object cSvc = cCls.getDeclaredConstructor().newInstance();
+
+            try {
+                Method mList = cCls.getMethod("list", Long.class, Integer.class);
+                @SuppressWarnings("unchecked")
+                List<?> cmList = (List<?>) mList.invoke(cSvc, productId, Integer.valueOf(10));
+                if (cmList != null) req.setAttribute("comments", cmList);
+            } catch (NoSuchMethodException ns) {
+                try {
+                    Method mList2 = cCls.getMethod("findLatest", Long.class, Integer.class);
+                    @SuppressWarnings("unchecked")
+                    List<?> cmList2 = (List<?>) mList2.invoke(cSvc, productId, Integer.valueOf(10));
+                    if (cmList2 != null) req.setAttribute("comments", cmList2);
+                } catch (Exception ignore) {}
+            }
+
+        } catch (ClassNotFoundException notFound) {
+            System.out.println("[Comment] SKIP — CommentService not found");
+        } catch (Exception e) {
+            System.out.println("[Comment] ERROR — " + e.getMessage());
+        }
+    }
+
+    /** Nhỏ gọn: model tổng hợp cho reviewStats (JSP: reviewStats.avg / reviewStats.count) */
+    public static class SimpleStats {
+        private final double avg;
+        private final long count;
+        public SimpleStats(double avg, long count){ this.avg = avg; this.count = count; }
+        public double getAvg(){ return avg; }
+        public long getCount(){ return count; }
     }
 
     /**
@@ -294,5 +435,35 @@ public class ProductBrowseServlet extends HttpServlet {
             } catch (Exception ignore2) {}
         } catch (Exception ignore) {}
         return null;
+    }
+
+    // tiny reflect helpers
+    private static boolean toBool(Object o){
+        if (o == null) return false;
+        if (o instanceof Boolean) return (Boolean)o;
+        if (o instanceof Number) return ((Number)o).intValue()!=0;
+        return "true".equalsIgnoreCase(String.valueOf(o));
+    }
+    private static double readDouble(Object obj, String... getters){
+        for (String g : getters){
+            try {
+                Method m = obj.getClass().getMethod(g);
+                Object v = m.invoke(obj);
+                if (v instanceof Number) return ((Number)v).doubleValue();
+                return Double.parseDouble(String.valueOf(v));
+            } catch(Exception ignore){}
+        }
+        return 0.0;
+    }
+    private static long readLong(Object obj, String... getters){
+        for (String g : getters){
+            try {
+                Method m = obj.getClass().getMethod(g);
+                Object v = m.invoke(obj);
+                if (v instanceof Number) return ((Number)v).longValue();
+                return Long.parseLong(String.valueOf(v));
+            } catch(Exception ignore){}
+        }
+        return 0L;
     }
 }
