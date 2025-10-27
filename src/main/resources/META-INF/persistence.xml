@@ -17,9 +17,13 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 		<class>vn.iotstar.entities.Order</class>
 		<class>vn.iotstar.entities.OrderItem</class>
 		<class>vn.iotstar.entities.Payment</class>
-
-		<!-- ✅ THÊM DÒNG NÀY -->
 		<class>vn.iotstar.entities.UserOtp</class>
+
+		<!-- ✅ Thêm entity ghi nhận sản phẩm đã xem -->
+		<class>vn.iotstar.entities.ViewedProduct</class>
+
+		<!-- ✅ Thêm entity Yêu thích -->
+		<class>vn.iotstar.entities.Favorite</class>
 
 		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 

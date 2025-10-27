@@ -1,9 +1,10 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions"%>
-<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<fmt:setLocale value="vi_VN" scope="page"/>
 
-<!-- Styles: chuẩn hoá kích thước ảnh trang chi tiết -->
 <style>
 .product-detail .main-img {
 	width: 100%;
@@ -28,12 +29,21 @@
 		height: 72px;
 	}
 }
+
+/* Card hover nhẹ cho related & viewed */
+.card:hover{
+  transform: translateY(-2px);
+  transition: transform .15s ease;
+}
+
+/* FAVORITE button tweak */
+.fav-wrap { display:flex; align-items:center; gap:.5rem; margin-top:.5rem; }
+.fav-wrap .btn { line-height: 1.1; }
 </style>
 
 <c:choose>
 	<c:when test="${not empty product}">
 		<div class="row g-3 product-detail">
-			<!-- GALLERY -->
 			<div class="col-12 col-md-6">
 				<%-- === Resolve main image from images[0] === --%>
 				<c:set var="mainRaw" value="${empty images ? '' : images[0]}" />
@@ -52,7 +62,7 @@
 					</c:when>
 					<c:otherwise>
 						<c:set var="resolvedMain"
-							value="${ctx.concat('/assets/products/').concat(mainFixed)}" />
+							value="${ctx.concat('/assets/img/products/').concat(mainFixed)}" />
 					</c:otherwise>
 				</c:choose>
 
@@ -82,7 +92,7 @@
 								</c:when>
 								<c:otherwise>
 									<c:set var="resolvedThumb"
-										value="${ctx.concat('/assets/products/').concat(tFixed)}" />
+										value="${ctx.concat('/assets/img/products/').concat(tFixed)}" />
 								</c:otherwise>
 							</c:choose>
 
@@ -96,23 +106,20 @@
 				</c:if>
 			</div>
 
-			<!-- INFO -->
 			<div class="col-12 col-md-6">
 				<h1 class="h5">
 					<c:out value="${product.productName}" />
 				</h1>
 
-				<!-- ⭐ Shop: logo + tên + link lọc theo shop -->
 				<c:if test="${not empty product.shop}">
 					<div class="d-flex align-items-center gap-2 mb-2">
 						<c:if test="${not empty product.shop.logoUrl}">
-							<img src="${product.shop.logoUrl}"
+							<img src="${ctx}${product.shop.logoUrl}"
 								alt="<c:out value='${product.shop.shopName}'/>"
-								class="rounded-circle border shadow-sm"
-								style="width: 172px; height: 172px; object-fit: cover;"
+								class="rounded border"
+								style="width:172px;height:172px;object-fit:cover"
 								onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
 						</c:if>
-
 
 						<div>
 							<div class="small text-muted">Của shop</div>
@@ -123,11 +130,8 @@
                        </c:url>">
 								<c:out value="${product.shop.shopName}" />
 							</a>
-							<!-- /WEB-INF/views/vendor/shop-profile.jsp -->
 							<a href="${ctx}/chat?shopId=${product.shop.shopId}"
 								class="btn btn-outline-primary"> 💬 Chat với cửa hàng </a>
-
-
 						</div>
 					</div>
 				</c:if>
@@ -137,18 +141,41 @@
 						value="${product.category != null ? product.category.categoryName : ''}" />
 				</div>
 
-				<div class="fs-4 fw-bold">
-					<c:choose>
-						<c:when test="${not empty product.discountPrice}">${product.discountPrice}</c:when>
-						<c:otherwise>${product.price}</c:otherwise>
-					</c:choose>
-				</div>
+        <%-- ======= GIÁ CHÍNH: format VNĐ + rút gọn k/triệu (Từ 1a97448) ======= --%>
+        <c:set var="priceMain" value="${not empty product.discountPrice ? product.discountPrice : product.price}"/>
+        <div class="fs-4 fw-bold">
+          <fmt:formatNumber value="${priceMain}" type="number" maxFractionDigits="0"/> ₫
+          <span class="text-muted small">
+            (
+            <c:choose>
+              <c:when test="${priceMain >= 1000000}">
+                <fmt:formatNumber value="${priceMain / 1000000.0}" maxFractionDigits="1"/> triệu
+              </c:when>
+              <c:otherwise>
+                <fmt:formatNumber value="${priceMain / 1000.0}" maxFractionDigits="0"/>k
+              </c:otherwise>
+            </c:choose>
+            )
+          </span>
+        </div>
 
-				<p class="mt-3">
+        <c:set var="isFavSafe" value="${isFav == true}"/>
+        <c:set var="favCountSafe" value="${empty favoriteCount ? 0 : favoriteCount}"/>
+        <div class="fav-wrap">
+          <button id="btn-fav"
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                  data-product="${product.productId}"
+                  aria-pressed="${isFavSafe}">
+            <span id="fav-icon">${isFavSafe ? '❤️' : '🤍'}</span>
+            <span id="fav-text">${isFavSafe ? 'Đã thích' : 'Thêm Yêu thích'}</span>
+          </button>
+          <small class="text-muted">(<span id="fav-count">${favCountSafe}</span>)</small>
+        </div>
+        <p class="mt-3">
 					<c:out value="${product.description}" />
 				</p>
 
-				<!-- ✅ FORM: Thêm vào giỏ (AJAX, không rời trang) -->
 				<div class="mt-3">
 					<form id="addToCartForm" method="post" action="${ctx}/cart/add"
 						class="d-flex align-items-center gap-2">
@@ -174,7 +201,6 @@
 			</div>
 		</div>
 
-		<!-- RELATED PRODUCTS (tùy chọn, chỉ hiển thị khi có dữ liệu) -->
 		<c:if test="${not empty relatedProducts}">
 			<h2 class="h6 mt-4 mb-2">Sản phẩm liên quan</h2>
 			<div class="row row-cols-2 row-cols-md-4 g-3">
@@ -196,7 +222,7 @@
 						</c:when>
 						<c:otherwise>
 							<c:set var="rpCover"
-								value="${ctx.concat('/assets/products/').concat(rpFixed)}" />
+								value="${ctx.concat('/assets/img/products/').concat(rpFixed)}" />
 						</c:otherwise>
 					</c:choose>
 
@@ -216,12 +242,12 @@
 								<div class="fw-semibold text-truncate" title="${rp.productName}">
 									<c:out value="${rp.productName}" />
 								</div>
-								<div class="fw-bold">
-									<c:choose>
-										<c:when test="${not empty rp.discountPrice}">${rp.discountPrice}</c:when>
-										<c:otherwise>${rp.price}</c:otherwise>
-									</c:choose>
-								</div>
+								
+								<%-- Giá liên quan: chỉ hiển thị VNĐ gọn (Từ 1a97448) --%>
+                <c:set var="rpMain" value="${not empty rp.discountPrice ? rp.discountPrice : rp.price}"/>
+                <div class="fw-bold">
+                  <fmt:formatNumber value="${rpMain}" type="number" maxFractionDigits="0"/> ₫
+                </div>
 							</div>
 						</div>
 					</div>
@@ -229,6 +255,75 @@
 			</div>
 		</c:if>
 
+		<div class="mt-4">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h2 class="h4 m-0 fw-semibold">Bạn đã xem gần đây</h2>
+        <a class="btn btn-sm btn-outline-secondary" href="${ctx}/recent">Xem tất cả</a>
+      </div>
+
+      <c:choose>
+        <c:when test="${not empty recentViewed}">
+          <div class="row row-cols-2 row-cols-md-6 g-3">
+            <c:forEach var="rv" items="${recentViewed}">
+              <%-- Resolve cover --%>
+              <c:set var="rvRaw"   value="${empty rv.coverUrl ? '' : rv.coverUrl}"/>
+              <c:set var="rvFixed" value="${fn:replace(rvRaw, '/assset/', '/assets/')}"/>
+              <c:choose>
+                <c:when test="${fn:startsWith(rvFixed,'http://') or fn:startsWith(rvFixed,'https://')}">
+                  <c:set var="rvCover" value="${rvFixed}"/>
+                </c:when>
+                <c:when test="${fn:startsWith(rvFixed,'/assets/')}">
+                  <c:set var="rvCover" value="${ctx.concat(rvFixed)}"/>
+                </c:when>
+                <c:when test="${fn:startsWith(rvFixed,'/')}">
+                  <c:set var="rvCover" value="${rvFixed}"/>
+                </c:when>
+                <c:otherwise>
+                  <c:set var="rvCover" value="${ctx.concat('/assets/img/products/').concat(rvFixed)}"/>
+                </c:otherwise>
+              </c:choose>
+
+              <div class="col">
+                <div class="card h-100">
+                  <a href="${ctx}/product/${rv.productId}">
+                    <img class="card-img-top"
+                         style="aspect-ratio:1/1;object-fit:cover"
+                         src="${empty rvCover ? (ctx.concat('/assets/img/placeholder.png')) : rvCover}"
+                         alt="<c:out value='${rv.productName}'/>"
+                         onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
+                  </a>
+                  <div class="card-body p-2">
+                    <div class="fw-semibold text-truncate" title="${rv.productName}">
+                      <c:out value="${rv.productName}"/>
+                    </div>
+
+                    <%-- Giá viewed: hiển thị VNĐ gọn --%>
+                    <c:set var="rvMain" value="${not empty rv.discountPrice ? rv.discountPrice : rv.price}"/>
+                    <div class="fw-bold small">
+                      <fmt:formatNumber value="${rvMain}" type="number" maxFractionDigits="0"/> ₫
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </c:forEach>
+          </div>
+        </c:when>
+
+        <c:otherwise>
+          <div class="border rounded p-3 bg-light-subtle">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded bg-white border d-flex align-items-center justify-content-center" style="width:56px;height:56px;">
+                <span class="text-muted">🕘</span>
+              </div>
+              <div>
+                <div class="fw-semibold">Chưa có lịch sử đã xem</div>
+                <div class="text-muted small">Hãy duyệt vài sản phẩm — chúng sẽ xuất hiện ở đây để bạn mở lại nhanh.</div>
+              </div>
+            </div>
+          </div>
+        </c:otherwise>
+      </c:choose>
+    </div>
 	</c:when>
 	<c:otherwise>
 		<div class="text-center text-muted py-5">Không tìm thấy sản
@@ -236,7 +331,6 @@
 	</c:otherwise>
 </c:choose>
 
-<!-- Toast container (góc phải dưới) -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
 	<div id="cartToast"
 		class="toast align-items-center text-bg-success border-0"
@@ -250,7 +344,6 @@
 	</div>
 </div>
 
-<!-- Tiny gallery script -->
 <script>
   (function () {
     var main = document.getElementById('mainImage');
@@ -269,7 +362,60 @@
   })();
 </script>
 
-<!-- ✅ AJAX + Toast -->
+<script>
+  (function () {
+    var btn = document.getElementById('btn-fav');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+      var pid = btn.getAttribute('data-product');
+      fetch('${ctx}/favorite/toggle', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+        body: 'productId=' + encodeURIComponent(pid),
+        credentials: 'same-origin'
+      })
+      .then(async function (res) {
+        if (res.status === 401) {
+          window.location.href = '${ctx}/login';
+          return null;
+        }
+        var text = await res.text();
+        if (!res.ok) {
+          // nếu server trả HTML (VD: redirect), show ngắn gọn
+          var hint = text ? (': ' + text.slice(0, 120)) : '';
+          throw new Error('HTTP ' + res.status + hint);
+        }
+        var json;
+        try { json = text ? JSON.parse(text) : null; } catch(e) { json = null; }
+        if (!json || json.ok !== true) {
+          if (text && /<\s*html[^>]*>/i.test(text)) {
+            window.location.href = '${ctx}/login';
+            return null;
+          }
+          throw new Error('Phản hồi không phải JSON hợp lệ.');
+        }
+        return json;
+      })
+      .then(function (json) {
+        if (!json) return;
+        var nowFav = !!json.fav;
+        var iconEl = document.getElementById('fav-icon');
+        var textEl = document.getElementById('fav-text');
+        var cntEl  = document.getElementById('fav-count');
+
+        btn.setAttribute('aria-pressed', nowFav ? 'true' : 'false');
+        if (iconEl) iconEl.textContent = nowFav ? '❤️' : '🤍';
+        if (textEl) textEl.textContent = nowFav ? 'Đã thích' : 'Thêm Yêu thích';
+        if (cntEl)  cntEl.textContent  = (json.count != null ? json.count : 0);
+      })
+      .catch(function (err) {
+        alert('Không thể cập nhật yêu thích: ' + err.message);
+      });
+    });
+  })();
+</script>
+
 <script>
   (function () {
     var form  = document.getElementById('addToCartForm');

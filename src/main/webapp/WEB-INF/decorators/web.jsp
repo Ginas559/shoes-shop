@@ -30,6 +30,12 @@
           <li class="nav-item">
             <a class="nav-link" href="${pageContext.request.contextPath}/products">Sản phẩm</a>
           </li>
+
+          <!-- ✅ Thêm mục Yêu thích -->
+          <li class="nav-item">
+            <a class="nav-link" href="${pageContext.request.contextPath}/favorites">Yêu thích</a>
+          </li>
+
           <li class="nav-item">
             <a class="nav-link" href="${pageContext.request.contextPath}/cart">Giỏ hàng</a>
           </li>
