@@ -1,6 +1,5 @@
 package vn.iotstar.entities;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -41,18 +40,15 @@ public class OrderItem {
     private Integer quantity;
 
     @Column(name = "discount", precision = 5, scale = 2)
-    private BigDecimal discount = BigDecimal.ZERO; // phần trăm giảm giá
+    private BigDecimal discount = BigDecimal.ZERO; // %
 
     @Transient
-    private BigDecimal subtotal; // không lưu trong DB, nhưng có thể tính lại trong code
+    private BigDecimal subtotal;
 
-    // Tính subtotal trong code (đồng bộ với SQL computed column)
     public BigDecimal getSubtotal() {
         if (price == null || quantity == null) return BigDecimal.ZERO;
-        BigDecimal discountMultiplier = BigDecimal.ONE.subtract(
-            discount.divide(BigDecimal.valueOf(100))
-        );
+        BigDecimal d = (discount == null) ? BigDecimal.ZERO : discount;
+        BigDecimal discountMultiplier = BigDecimal.ONE.subtract(d.divide(BigDecimal.valueOf(100)));
         return price.multiply(BigDecimal.valueOf(quantity)).multiply(discountMultiplier);
     }
 }
-

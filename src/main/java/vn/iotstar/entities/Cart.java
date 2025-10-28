@@ -27,7 +27,7 @@ public class Cart {
     @Column(name = "created_at", columnDefinition = "DATETIME DEFAULT GETDATE()")
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
     private List<CartItem> cartItems;
 }
 
