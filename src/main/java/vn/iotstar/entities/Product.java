@@ -76,4 +76,7 @@ public class Product {
         ACTIVE,
         INACTIVE
     }
+    
+    @Builder.Default
+    private Boolean isBanned = false;
 }

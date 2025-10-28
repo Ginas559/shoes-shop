@@ -40,7 +40,7 @@ public class RegisterServlet extends HttpServlet {
         return switch (v) {
             case "ADMIN" -> User.Role.ADMIN;
             case "VENDOR" -> User.Role.VENDOR;
-            case "SHIPPER" -> User.Role.ShIPPER; // tên enum đúng theo entity hiện có
+            case "SHIPPER" -> User.Role.SHIPPER; // tên enum đúng theo entity hiện có
             default -> User.Role.USER;
         };
     }
