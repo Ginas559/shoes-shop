@@ -15,6 +15,9 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
     private Long categoryId;
+    
+//    @Column(nullable = true)
+//    private String image;
 
     // ✅ Dùng NVARCHAR để lưu tiếng Việt chuẩn
     @Column(name = "category_name", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
@@ -22,4 +25,7 @@ public class Category {
 
     @Column(name = "description", length = 500, columnDefinition = "NVARCHAR(500)")
     private String description;
+    
+    @Builder.Default
+    private Boolean isBanned = false;
 }

@@ -34,11 +34,11 @@ public class User {
     private Long id;
 
     @NotBlank @Size(max = 32)
-    @Column(nullable = false, length = 32)
+    @Column(nullable = false, length = 32, columnDefinition = "nvarchar(50)")
     private String firstname;
 
     @NotBlank @Size(max = 32)
-    @Column(nullable = false, length = 32)
+    @Column(nullable = false, length = 32, columnDefinition = "nvarchar(50)")
     private String lastname;
 
     // KHÔNG unique nữa
@@ -74,7 +74,7 @@ public class User {
     @Column(name = "hashed_password", nullable = false)
     private String hashedPassword;
 
-    public enum Role { USER, ADMIN, VENDOR, ShIPPER }
+    public enum Role { USER, ADMIN, VENDOR, SHIPPER }
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10, columnDefinition = "varchar(10) default 'USER'")
     private Role role = Role.USER;
@@ -102,6 +102,9 @@ public class User {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+    
+    @Builder.Default
+    private Boolean isBanned = false;
 
     // ================== BỔ SUNG CHO UC_020: STAFF CỦA SHOP ==================
     @ManyToOne(fetch = FetchType.LAZY)

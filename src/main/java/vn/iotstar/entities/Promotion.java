@@ -5,6 +5,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import java.time.format.DateTimeFormatter; // Phải import
+
 @Entity
 @Table(name = "Promotion")
 @Data
@@ -36,5 +38,25 @@ public class Promotion {
 
     @Column(name = "apply_to", length = 20)
     private String applyTo; // 'PRODUCT' hoặc 'SHIPPING'
+    
+    private PromotionStatus status = PromotionStatus.ACTIVE;
+    
+    public enum PromotionStatus{ACTIVE, INACTIVE};
+    
+    @Transient // Không map vào database
+    public String getFormattedStartDate() {
+        if (this.startDate != null) {
+            return this.startDate.format(DateTimeFormatter.ISO_DATE); // Định dạng yyyy-MM-dd
+        }
+        return "";
+    }
+
+    @Transient // Không map vào database
+    public String getFormattedEndDate() {
+        if (this.endDate != null) {
+            return this.endDate.format(DateTimeFormatter.ISO_DATE); // Định dạng yyyy-MM-dd
+        }
+        return "";
+    }
 }
 
