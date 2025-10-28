@@ -136,10 +136,6 @@ public class CheckoutServlet extends HttpServlet {
                 em.persist(oi);
             }
 
-            // Xoá giỏ hàng (clear items)
-            for (CartItem ci : cart.getCartItems()) {
-                em.remove(ci);
-            }
 
             tx.commit();
             session.setAttribute("flash", "Đặt hàng thành công! Mã đơn #" + order.getOrderId());

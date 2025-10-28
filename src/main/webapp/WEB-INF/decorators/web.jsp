@@ -40,9 +40,14 @@
           <li class="nav-item">
             <a class="nav-link" href="${pageContext.request.contextPath}/cart">Giỏ hàng</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="${pageContext.request.contextPath}/checkout">Thanh toán (COD)</a>
-          </li>
+
+          <!-- 🔒 ĐÃ ẨN: Thanh toán (COD) theo yêu cầu -->
+          <c:if test="${false}">
+            <li class="nav-item">
+              <a class="nav-link" href="${pageContext.request.contextPath}/checkout">Thanh toán (COD)</a>
+            </li>
+          </c:if>
+
           <li class="nav-item">
             <a class="nav-link" href="${pageContext.request.contextPath}/orders">Đơn hàng của tôi</a>
           </li>

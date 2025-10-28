@@ -37,7 +37,7 @@
             <tr>
               <td>${st.index + 1}</td>
 
-              <td>
+              <td class="js-product-name">
                 <a href="${ctx}/product/${item.product.productId}">
                   <c:out value="${item.product.productName}" />
                 </a>
@@ -67,11 +67,12 @@
 
               <!-- Xoá -->
               <td class="text-end">
-                <form method="post" action="${ctx}/cart/delete"
-                      onsubmit="return confirm('Xoá sản phẩm này khỏi giỏ hàng?');"
-                      class="d-inline">
+                <!-- ✅ bỏ confirm() sơ sài; giữ nguyên action/method -->
+                <form method="post" action="${ctx}/cart/delete" class="d-inline js-delete-form">
                   <input type="hidden" name="itemId" value="${item.cartItemId}" />
-                  <button class="btn btn-sm btn-outline-danger">Xoá</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger js-delete-btn">
+                    Xoá
+                  </button>
                 </form>
               </td>
             </tr>
@@ -105,3 +106,152 @@
     </div>
   </c:otherwise>
 </c:choose>
+
+<!-- ========== Modal xác nhận xoá (đẹp, có màu & khối nổi, không phụ thuộc lib ngoài) ========== -->
+<style>
+  .cm-overlay {
+    position: fixed; inset: 0;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    z-index: 1050;
+    transition: opacity .2s ease;
+  }
+  .cm-overlay.show {
+    display: flex;
+    animation: cm-fadeIn .25s ease forwards;
+  }
+  @keyframes cm-fadeIn { from {opacity:0} to {opacity:1} }
+  @keyframes cm-scaleUp { from {transform:scale(0.92); opacity:0} to {transform:scale(1); opacity:1} }
+
+  .cm-modal {
+    width: min(480px, 90vw);
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 15px 40px rgba(0,0,0,.30);
+    overflow: hidden;
+    animation: cm-scaleUp .22s ease;
+  }
+  .cm-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #ff4b2b, #ff416c);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.05rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cm-body {
+    padding: 18px 22px;
+    background: #fff;
+    color: #333;
+  }
+  .cm-body strong { color: #e63946; }
+  .cm-footer {
+    padding: 14px 20px;
+    background: #f9f9f9;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .cm-btn {
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+  }
+  .cm-btn:hover { transform: translateY(-1px); }
+  .cm-btn:active { transform: translateY(0); }
+  .cm-btn-cancel {
+    background: #e9ecef;
+    color: #333;
+  }
+  .cm-btn-cancel:hover { background: #dcdcdc; }
+  .cm-btn-danger {
+    background: #ff4b2b;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(255, 75, 43, 0.35);
+  }
+  .cm-btn-danger:hover { background: #ff2d1a; }
+</style>
+
+<div class="cm-overlay" id="confirmDeleteOverlay" role="dialog" aria-modal="true" aria-labelledby="cmTitle" aria-hidden="true">
+  <div class="cm-modal" role="document">
+    <div class="cm-header">🗑 Xác nhận xoá sản phẩm</div>
+    <div class="cm-body">
+      <div id="cmMessage">Bạn có chắc muốn xoá sản phẩm này khỏi giỏ hàng?</div>
+    </div>
+    <div class="cm-footer">
+      <button type="button" class="cm-btn cm-btn-cancel" id="cmCancelBtn">Huỷ</button>
+      <button type="button" class="cm-btn cm-btn-danger" id="cmConfirmBtn">Xoá</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Trạng thái modal
+  var overlay = document.getElementById('confirmDeleteOverlay');
+  var confirmBtn = document.getElementById('cmConfirmBtn');
+  var cancelBtn  = document.getElementById('cmCancelBtn');
+  var msgBox     = document.getElementById('cmMessage');
+
+  var pendingForm = null;
+
+  function openModal(message, form) {
+    pendingForm = form;
+    // Cho phép in đậm tên SP (message đã được build từ textContent => an toàn)
+    msgBox.innerHTML = message || "Bạn có chắc muốn xoá sản phẩm này khỏi giỏ hàng?";
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+    confirmBtn.focus();
+  }
+
+  function closeModal() {
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+    pendingForm = null;
+  }
+
+  // Bấm Xoá trong modal
+  confirmBtn.addEventListener('click', function () {
+    if (pendingForm) {
+      pendingForm.submit();
+    }
+    closeModal();
+  });
+
+  // Huỷ / bấm ra ngoài để đóng
+  cancelBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closeModal();
+  });
+
+  // ESC để đóng
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && overlay.classList.contains('show')) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+
+  // Gắn cho tất cả form xoá
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.js-delete-btn');
+    if (!btn) return;
+
+    var form = btn.closest('.js-delete-form');
+    if (!form) return;
+
+    // Lấy tên SP từ textContent (tránh HTML), rồi render đậm trong modal
+    var row = form.closest('tr');
+    var nameCell = row ? row.querySelector('.js-product-name') : null;
+    var nameText = nameCell ? nameCell.textContent.trim() : 'sản phẩm này';
+
+    e.preventDefault();
+    openModal('Bạn có chắc muốn xoá <strong>"' + nameText + '"</strong> khỏi giỏ hàng?', form);
+  });
+})();
+</script>

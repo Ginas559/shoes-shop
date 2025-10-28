@@ -40,6 +40,7 @@
           <tr>
             <th>#</th>
             <th>Ngày tạo</th>
+            <th>Mã giao dịch</th>
             <th>Thanh toán</th>
             <th class="text-end">Tổng tiền</th>
             <th>Trạng thái</th>
@@ -48,9 +49,28 @@
         </thead>
         <tbody>
           <c:forEach var="o" items="${orders}">
+            <c:set var="txn" value="${paymentsByOrderId[o.orderId]}"/>
+
             <tr>
               <td>#${o.orderId}</td>
-              <td><c:out value="${o.createdAt}"/></td>
+              <!-- Hiển thị ngày đẹp hơn -->
+              <td>
+                <fmt:parseDate value="${o.createdAt}" pattern="yyyy-MM-dd'T'HH:mm:ss" var="createdDate" />
+                <fmt:formatDate value="${createdDate}" pattern="dd/MM/yyyy HH:mm" />
+              </td>
+
+              <!-- Cột mã giao dịch -->
+              <td>
+                <c:choose>
+                  <c:when test="${not empty txn && groupFirst != null && groupFirst.contains(o.orderId)}">
+                    <span class="fw-semibold">${txn}</span>
+                  </c:when>
+                  <c:otherwise>
+                    <span class="text-muted small">—</span>
+                  </c:otherwise>
+                </c:choose>
+              </td>
+
               <td><span class="badge text-bg-light"><c:out value="${o.paymentMethod}"/></span></td>
               <td class="text-end">
                 <fmt:formatNumber value="${o.totalAmount}" type="currency" currencySymbol="₫"/>
