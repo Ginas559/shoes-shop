@@ -1,4 +1,3 @@
-<!-- filepath: src/main/webapp/WEB-INF/decorators/layout.jsp -->
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!doctype html>
@@ -8,10 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${pageTitle != null ? pageTitle : 'BMTT Shop'}</title>
 
-<!-- SiteMesh: head -->
 <sitemesh:write property="head" />
 
-<!-- Bootstrap CSS -->
 <link
 	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
 	rel="stylesheet">
@@ -31,35 +28,28 @@
 			</button>
 
 			<div class="collapse navbar-collapse" id="mainNav">
-				<!-- Menu trái -->
 				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
-					<li class="nav-item"><a class="nav-link"
-						href="${pageContext.request.contextPath}/products">Sản phẩm</a></li>
-
-					<li class="nav-item"><a class="nav-link"
-						href="${pageContext.request.contextPath}/vendors">Vendor</a></li>
-
-
-					<!-- ✅ Thêm mục Yêu thích -->
-					<li class="nav-item"><a class="nav-link"
-						href="${pageContext.request.contextPath}/favorites">Yêu thích</a>
+					
+					<li class="nav-item">
+						<a class="nav-link" href="${pageContext.request.contextPath}/products">Sản phẩm</a>
+					</li>
+					
+					<li class="nav-item">
+						<a class="nav-link" href="${pageContext.request.contextPath}/favorites">Yêu thích</a>
 					</li>
 
-					<li class="nav-item"><a class="nav-link"
-						href="${pageContext.request.contextPath}/cart">Giỏ hàng</a></li>
+					<li class="nav-item">
+						<a class="nav-link" href="${pageContext.request.contextPath}/cart">Giỏ hàng</a>
+					</li>
 
-					<!-- 🔒 ĐÃ ẨN: Thanh toán (COD) theo yêu cầu -->
-					<c:if test="${false}">
-						<li class="nav-item"><a class="nav-link"
-							href="${pageContext.request.contextPath}/checkout">Thanh toán
-								(COD)</a></li>
-					</c:if>
+					<li class="nav-item">
+						<a class="nav-link" href="${pageContext.request.contextPath}/orders">Đơn hàng của tôi</a>
+					</li>
 
-					<li class="nav-item"><a class="nav-link"
-						href="${pageContext.request.contextPath}/orders">Đơn hàng của
-							tôi</a></li>
-
-					<!-- Vendor menu -->
+					<li class="nav-item">
+						<a class="nav-link" href="${pageContext.request.contextPath}/vendors">Vendor</a>
+					</li>
+					
 					<c:if test="${sessionScope.role == 'VENDOR'}">
 						<li class="nav-item dropdown"><a
 							class="nav-link dropdown-toggle" href="#" role="button"
@@ -84,7 +74,6 @@
 					</c:if>
 				</ul>
 
-				<!-- User actions -->
 				<div class="d-flex align-items-center gap-2">
 					<c:choose>
 						<c:when test="${empty sessionScope.userId}">
