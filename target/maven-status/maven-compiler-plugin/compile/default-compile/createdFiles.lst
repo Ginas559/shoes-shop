@@ -64,6 +64,7 @@ vn\iotstar\entities\Cart.class
 vn\iotstar\entities\ProductComment$ProductCommentBuilder.class
 vn\iotstar\entities\ChatMessage.class
 vn\iotstar\entities\Payment$PaymentMethod.class
+vn\iotstar\services\ProductService$PageResult.class
 vn\iotstar\repositories\UserOtpRepository.class
 vn\iotstar\entities\Promotion$PromotionBuilder.class
 vn\iotstar\entities\Coupon$CouponBuilder.class

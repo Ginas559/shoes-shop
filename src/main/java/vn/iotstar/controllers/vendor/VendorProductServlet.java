@@ -7,6 +7,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.*;
 
 import com.cloudinary.Cloudinary;
@@ -31,7 +32,7 @@ public class VendorProductServlet extends HttpServlet {
     private final ProductImageService productImageService = new ProductImageService();
     private final StatisticService helper = new StatisticService();
 
-    /** Resolve shop cho owner/staff. Đồng bộ staffShopId nếu cần. */
+    /** Resolve shop cho owner/staff. */
     private Shop resolveShop(HttpServletRequest req) {
         Long uid  = SessionUtil.currentUserId(req);
         String role = SessionUtil.currentRole(req);
@@ -42,7 +43,8 @@ public class VendorProductServlet extends HttpServlet {
         if ("VENDOR".equals(role)) {
             return helper.findShopByOwner(uid);
         }
-        if ("USER".equals(role)) {
+        // hỗ trợ cả USER hoặc STAFF (tuỳ hệ thống)
+        if ("USER".equals(role) || "STAFF".equals(role)) {
             Long sid = staffShopId;
             if (sid == null && ss != null) {
                 Object cu = ss.getAttribute("currentUser");
@@ -56,11 +58,13 @@ public class VendorProductServlet extends HttpServlet {
         return null;
     }
 
-    private void ensureOwned(Shop shop, Product p, HttpServletResponse resp) throws IOException {
+    private boolean ensureOwnedOr403(Shop shop, Product p, HttpServletResponse resp) throws IOException {
         if (p == null || shop == null || p.getShop() == null
                 || !Objects.equals(p.getShop().getShopId(), shop.getShopId())) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Không có quyền thao tác sản phẩm này.");
+            return false;
         }
+        return true;
     }
 
     @Override
@@ -75,25 +79,52 @@ public class VendorProductServlet extends HttpServlet {
         }
         req.setAttribute("shop", shop);
 
+        // flash errors từ session (nếu có)
+        HttpSession session = req.getSession(false);
+        if (session != null && session.getAttribute("flashErrors") != null) {
+            @SuppressWarnings("unchecked")
+            List<String> errs = (List<String>) session.getAttribute("flashErrors");
+            req.setAttribute("errors", errs);
+            session.removeAttribute("flashErrors");
+        }
+
         if (path == null || "/".equals(path)) {
-            // chỉ lấy sản phẩm của shop hiện tại
-            List<Product> list = productService.getByShopId(shop.getShopId());
-            req.setAttribute("products", list);
+            int page = parseIntOrDefault(req.getParameter("page"), 1);
+            int size = parseIntOrDefault(req.getParameter("size"), 10);
+            String q = trimToNull(req.getParameter("q"));
+            Long categoryId = parseLongOrNull(req.getParameter("categoryId"));
+            Product.ProductStatus status = parseStatusOrNull(req.getParameter("status"));
+
+            ProductService.PageResult<Product> pr = productService.findByShopPaged(
+                    shop.getShopId(), page, size, q, categoryId, status);
+
+            req.setAttribute("products", pr.items);
+            req.setAttribute("totalPages", pr.totalPages);
+            req.setAttribute("page", pr.page);
+            req.setAttribute("size", pr.size);
+            req.setAttribute("q", q);
+            req.setAttribute("categoryId", categoryId);
+            req.setAttribute("status", status != null ? status.name() : "");
+            req.setAttribute("categories", categoryService.findAll());
 
             Map<Long, String> thumbnails = new HashMap<>();
-            for (Product p : list) {
+            for (Product p : pr.items) {
                 thumbnails.put(p.getProductId(), productImageService.getThumbnailUrl(p.getProductId()));
             }
             req.setAttribute("thumbnails", thumbnails);
-            req.setAttribute("categories", categoryService.findAll());
+
             req.getRequestDispatcher("/WEB-INF/views/vendor/products.jsp").forward(req, resp);
             return;
         }
 
         if ("/edit".equals(path)) {
-            Long id = Long.valueOf(req.getParameter("id"));
+            Long id = parseLongOrNull(req.getParameter("id"));
+            if (id == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu id");
+                return;
+            }
             Product p = productService.findById(id);
-            ensureOwned(shop, p, resp); if (resp.isCommitted()) return;
+            if (!ensureOwnedOr403(shop, p, resp)) return;
 
             req.setAttribute("p", p);
             req.setAttribute("categories", categoryService.findAll());
@@ -117,8 +148,35 @@ public class VendorProductServlet extends HttpServlet {
         }
 
         if ("/add".equals(path)) {
-            Long productId = productService.addForShop(req, shop.getShopId()); // gán shopId tại server
+            List<String> errors = new ArrayList<>();
+            String name = req.getParameter("name");
+            String priceStr = req.getParameter("price");
+            String stockStr = req.getParameter("stock");
+            String catStr = req.getParameter("categoryId");
+
+            if (name == null || name.trim().length() < 3) errors.add("Tên tối thiểu 3 ký tự.");
+            try { new BigDecimal(priceStr); } catch (Exception e) { errors.add("Giá không hợp lệ."); }
+            try { Integer.parseInt(stockStr); } catch (Exception e) { errors.add("Tồn không hợp lệ."); }
+            try { Long.valueOf(catStr); } catch (Exception e) { errors.add("Danh mục không hợp lệ."); }
+
             Part part = req.getPart("image");
+            String fileErr = validateImagePart(part);
+            if (fileErr != null) errors.add(fileErr);
+
+            if (!errors.isEmpty()) {
+                flashAndBack(req, resp, errors);
+                return;
+            }
+
+            Long productId;
+            try {
+                productId = productService.addForShop(req, shop.getShopId());
+            } catch (RuntimeException ex) {
+                errors.add(ex.getMessage());
+                flashAndBack(req, resp, errors);
+                return;
+            }
+
             if (part != null && part.getSize() > 0) {
                 String url = uploadToCloudinary(part);
                 productImageService.addImage(productId, url, true);
@@ -128,12 +186,42 @@ public class VendorProductServlet extends HttpServlet {
         }
 
         if ("/update".equals(path)) {
-            Long productId = Long.valueOf(req.getParameter("productId"));
-            Product p = productService.findById(productId);
-            ensureOwned(shop, p, resp); if (resp.isCommitted()) return;
+            List<String> errors = new ArrayList<>();
 
-            productService.updateForShop(req, shop.getShopId());   // đảm bảo chỉ cập nhật trong shop
+            Long productId = parseLongOrNull(req.getParameter("productId"));
+            if (productId == null) {
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu productId");
+                return;
+            }
+            Product p = productService.findById(productId);
+            if (!ensureOwnedOr403(shop, p, resp)) return;
+
+            String name = req.getParameter("name");
+            String priceStr = req.getParameter("price");
+            String stockStr = req.getParameter("stock");
+            if (name == null || name.trim().length() < 3) errors.add("Tên tối thiểu 3 ký tự.");
+            try { new BigDecimal(priceStr); } catch (Exception e) { errors.add("Giá không hợp lệ."); }
+            try { Integer.parseInt(stockStr); } catch (Exception e) { errors.add("Tồn không hợp lệ."); }
+
             Part part = req.getPart("image");
+            if (part != null && part.getSize() > 0) {
+                String fileErr = validateImagePart(part);
+                if (fileErr != null) errors.add(fileErr);
+            }
+
+            if (!errors.isEmpty()) {
+                flashAndBack(req, resp, errors);
+                return;
+            }
+
+            try {
+                productService.updateForShop(req, shop.getShopId());
+            } catch (RuntimeException ex) {
+                errors.add(ex.getMessage());
+                flashAndBack(req, resp, errors);
+                return;
+            }
+
             if (part != null && part.getSize() > 0) {
                 String url = uploadToCloudinary(part);
                 productImageService.clearThumbnail(productId);
@@ -143,17 +231,60 @@ public class VendorProductServlet extends HttpServlet {
             return;
         }
 
-        if ("/delete".equals(path)) {
-            Long id = Long.valueOf(req.getParameter("productId"));
-            Product p = productService.findById(id);
-            ensureOwned(shop, p, resp); if (resp.isCommitted()) return;
-
-            productService.softDelete(id);
-            resp.sendRedirect(req.getContextPath() + "/vendor/products");
+        if ("/toggle".equals(path)) {
+            Long id = parseLongOrNull(req.getParameter("id"));
+            if (id == null) {
+                writeJson(resp, 400, Map.of("ok", false, "message", "Thiếu id"));
+                return;
+            }
+            try {
+                Product.ProductStatus st = productService.toggleStatus(id, shop.getShopId());
+                writeJson(resp, 200, Map.of("ok", true, "status", st.name()));
+            } catch (SecurityException se) {
+                writeJson(resp, 403, Map.of("ok", false, "message", "Không có quyền"));
+            } catch (RuntimeException re) {
+                writeJson(resp, 400, Map.of("ok", false, "message", re.getMessage()));
+            }
             return;
         }
 
         resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+    }
+
+    private static String trimToNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
+    }
+    private static int parseIntOrDefault(String s, int d) {
+        try { return Integer.parseInt(s); } catch (Exception e) { return d; }
+    }
+    private static Long parseLongOrNull(String s) {
+        try { return (s == null || s.isBlank()) ? null : Long.valueOf(s); } catch (Exception e) { return null; }
+    }
+    private static Product.ProductStatus parseStatusOrNull(String s) {
+        try { return (s == null || s.isBlank()) ? null : Product.ProductStatus.valueOf(s); }
+        catch (Exception e) { return null; }
+    }
+
+    private void flashAndBack(HttpServletRequest req, HttpServletResponse resp, List<String> errors) throws IOException {
+        req.getSession(true).setAttribute("flashErrors", errors);
+        resp.sendRedirect(req.getContextPath() + "/vendor/products");
+    }
+
+    private String validateImagePart(Part part) {
+        if (part == null || part.getSize() == 0) return null;
+        long size = part.getSize();
+        if (size > (2L * 1024 * 1024)) return "Ảnh tối đa 2MB.";
+        String fn = part.getSubmittedFileName();
+        if (fn == null) return "Tệp ảnh không hợp lệ.";
+        String lower = fn.toLowerCase();
+        if (!(lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp"))) {
+            return "Ảnh phải là jpg/jpeg/png/webp.";
+        }
+        String ct = part.getContentType();
+        if (ct == null || !ct.startsWith("image/")) return "Content-Type ảnh không hợp lệ.";
+        return null;
     }
 
     private String uploadToCloudinary(Part part) throws IOException {
@@ -169,5 +300,27 @@ public class VendorProductServlet extends HttpServlet {
             );
             return String.valueOf(res.get("secure_url"));
         }
+    }
+
+    private void writeJson(HttpServletResponse resp, int status, Map<String, ?> body) throws IOException {
+        resp.setStatus(status);
+        resp.setContentType("application/json;charset=UTF-8");
+        StringBuilder sb = new StringBuilder("{");
+        boolean first = true;
+        for (Map.Entry<String, ?> e : body.entrySet()) {
+            if (!first) sb.append(',');
+            first = false;
+            sb.append('"').append(e.getKey()).append('"').append(':');
+            Object v = e.getValue();
+            if (v == null) sb.append("null");
+            else if (v instanceof Number || v instanceof Boolean) sb.append(v.toString());
+            else sb.append('"').append(escapeJson(v.toString())).append('"');
+        }
+        sb.append('}');
+        resp.getWriter().write(sb.toString());
+    }
+
+    private String escapeJson(String s) {
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
