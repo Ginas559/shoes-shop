@@ -89,16 +89,15 @@ public class StatisticService {
     public List<Object[]> getProductRevenueBetween(Long shopId, LocalDateTime start, LocalDateTime end){
         EntityManager em = JPAConfig.getEntityManager();
         try{
-            String deliveredStatus = Order.OrderStatus.DELIVERED.toString(); // <--- CHUYỂN ENUM SANG CHUỖI
+            // KHÔNG CẦN CHUYỂN SANG STRING NỮA! Truyền thẳng Enum vào.
             return em.createQuery(
                 "SELECT p.productName, COALESCE(SUM(oi.price * oi.quantity),0) " +  
                 "FROM OrderItem oi JOIN oi.order o JOIN oi.product p " +
-                // So sánh với chuỗi ký tự :st
-                "WHERE o.shop.shopId=:sid AND o.status=:st " +
+                "WHERE o.shop.shopId=:sid AND o.status=:st " + // :st là kiểu OrderStatus
                 "AND o.createdAt>=:start AND o.createdAt<:end " +
                 "GROUP BY p.productName ORDER BY 2 DESC", Object[].class)
                 .setParameter("sid", shopId)
-                .setParameter("st", deliveredStatus) // <--- TRUYỀN CHUỖI VÀO THAM SỐ
+                .setParameter("st", vn.iotstar.entities.Order.OrderStatus.DELIVERED) // Truyền đối tượng Enum
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
@@ -109,15 +108,14 @@ public class StatisticService {
     public List<Object[]> getProductRevenueLifetime(Long shopId){
         EntityManager em = JPAConfig.getEntityManager();
         try{
-            String deliveredStatus = Order.OrderStatus.DELIVERED.toString(); // <--- CHUYỂN ENUM SANG CHUỖI
+            // KHÔNG CẦN CHUYỂN SANG STRING NỮA! Truyền thẳng Enum vào.
             return em.createQuery(
                 "SELECT p.productName, COALESCE(SUM(oi.price * oi.quantity),0) " +
                 "FROM OrderItem oi JOIN oi.order o JOIN oi.product p " +
-                // So sánh với chuỗi ký tự :st
-                "WHERE o.shop.shopId=:sid AND o.status=:st " + 
+                "WHERE o.shop.shopId=:sid AND o.status=:st " + // :st là kiểu OrderStatus
                 "GROUP BY p.productName ORDER BY 2 DESC", Object[].class)
                 .setParameter("sid", shopId)
-                .setParameter("st", deliveredStatus) // <--- TRUYỀN CHUỖI VÀO THAM SỐ
+                .setParameter("st", vn.iotstar.entities.Order.OrderStatus.DELIVERED) // Truyền đối tượng Enum
                 .getResultList();
         } finally { em.close(); }
     }
