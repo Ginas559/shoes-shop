@@ -1,19 +1,27 @@
+// src/main/java/vn/iotstar/controllers/vendor/VendorStatisticServlet.java
+
 package vn.iotstar.controllers.vendor;
 
+import com.google.gson.Gson;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-import com.google.gson.Gson;
 import vn.iotstar.entities.Shop;
 import vn.iotstar.services.StatisticService;
 import vn.iotstar.utils.SessionUtil;
 
 @WebServlet(urlPatterns = {"/vendor/statistics", "/vendor/statistics/view"})
 public class VendorStatisticServlet extends HttpServlet {
+
     private final StatisticService statisticService = new StatisticService();
     private final Gson gson = new Gson();
 
@@ -21,7 +29,6 @@ public class VendorStatisticServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        // Nếu gọi /vendor/statistics/view => Trả UI (JSP)
         String servletPath = req.getServletPath();
         if ("/vendor/statistics/view".equals(servletPath)) {
             req.setAttribute("pageTitle", "Thống kê");
@@ -29,7 +36,6 @@ public class VendorStatisticServlet extends HttpServlet {
             return;
         }
 
-        // Mặc định: /vendor/statistics => JSON
         resp.setContentType("application/json; charset=UTF-8");
 
         Long uid = SessionUtil.currentUserId(req);
@@ -44,7 +50,12 @@ public class VendorStatisticServlet extends HttpServlet {
             return;
         }
 
-        List<Object[]> rows = statisticService.getRevenueByMonth(shop.getShopId());
+        // optional filters
+        LocalDate from = parseDate(req.getParameter("from"));
+        LocalDate to = parseDate(req.getParameter("to"));
+        Integer year = parseInt(req.getParameter("year"));
+
+        List<Object[]> rows = statisticService.getRevenueByMonth(shop.getShopId(), year, from, to);
 
         List<String> labels = new ArrayList<>();
         List<BigDecimal> values = new ArrayList<>();
@@ -55,5 +66,21 @@ public class VendorStatisticServlet extends HttpServlet {
             values.add(total);
         }
         resp.getWriter().write(gson.toJson(Map.of("labels", labels, "values", values)));
+    }
+
+    private LocalDate parseDate(String s) {
+        try {
+            return (s == null || s.isBlank()) ? null : LocalDate.parse(s);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Integer parseInt(String s) {
+        try {
+            return (s == null || s.isBlank()) ? null : Integer.valueOf(s);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

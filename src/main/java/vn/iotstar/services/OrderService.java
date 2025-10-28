@@ -1,7 +1,12 @@
+// src/main/java/vn/iotstar/services/OrderService.java
+
 package vn.iotstar.services;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.NoResultException;
 import java.util.List;
-import jakarta.persistence.*;
+
 import vn.iotstar.configs.JPAConfig;
 import vn.iotstar.entities.Order;
 
@@ -12,22 +17,22 @@ public class OrderService {
         try {
             if (statusNullable == null || statusNullable.isBlank()) {
                 return em.createQuery(
-                    "SELECT o FROM Order o " +
-                    "JOIN FETCH o.user u " +                 // <- load sẵn user
-                    "WHERE o.shop.shopId = :sid " +
-                    "ORDER BY o.createdAt DESC", Order.class)
-                    .setParameter("sid", shopId)
-                    .getResultList();
+                                "SELECT o FROM Order o " +
+                                        "JOIN FETCH o.user u " +
+                                        "WHERE o.shop.shopId = :sid " +
+                                        "ORDER BY o.createdAt DESC", Order.class)
+                        .setParameter("sid", shopId)
+                        .getResultList();
             } else {
                 Order.OrderStatus st = Order.OrderStatus.valueOf(statusNullable);
                 return em.createQuery(
-                    "SELECT o FROM Order o " +
-                    "JOIN FETCH o.user u " +                 // <- load sẵn user
-                    "WHERE o.shop.shopId = :sid AND o.status = :st " +
-                    "ORDER BY o.createdAt DESC", Order.class)
-                    .setParameter("sid", shopId)
-                    .setParameter("st", st)
-                    .getResultList();
+                                "SELECT o FROM Order o " +
+                                        "JOIN FETCH o.user u " +
+                                        "WHERE o.shop.shopId = :sid AND o.status = :st " +
+                                        "ORDER BY o.createdAt DESC", Order.class)
+                        .setParameter("sid", shopId)
+                        .setParameter("st", st)
+                        .getResultList();
             }
         } finally {
             em.close();
@@ -50,8 +55,6 @@ public class OrderService {
             em.close();
         }
     }
-    
- // Trong OrderService.java
 
     /** Lấy 1 đơn hàng theo ID, nạp sẵn quan hệ để dùng ngay trong servlet/JSP. */
     public Order findById(Long orderId) {
@@ -59,15 +62,12 @@ public class OrderService {
         EntityManager em = JPAConfig.getEntityManager();
         try {
             return em.createQuery(
-                "SELECT o FROM Order o " +
-                "JOIN FETCH o.shop s " +  // Vẫn giữ vì có trong Order.java
-                "JOIN FETCH o.user u " +  // Vẫn giữ vì có trong Order.java
-                // ĐÃ XÓA: LEFT JOIN FETCH o.items oi
-                // ĐÃ XÓA: LEFT JOIN FETCH oi.product p 
-                "WHERE o.orderId = :id",
-                Order.class
-            ).setParameter("id", orderId)
-             .getSingleResult();
+                            "SELECT o FROM Order o " +
+                                    "JOIN FETCH o.shop s " +
+                                    "JOIN FETCH o.user u " +
+                                    "WHERE o.orderId = :id", Order.class)
+                    .setParameter("id", orderId)
+                    .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } finally {
@@ -75,27 +75,23 @@ public class OrderService {
         }
     }
 
-    /** (Khuyến nghị) Lấy đơn theo ID nhưng kèm ràng buộc thuộc đúng shop. Trả null nếu không khớp. */
+    /** Ràng buộc đơn thuộc đúng shop. */
     public Order findByIdForShop(Long orderId, Long shopId) {
         if (orderId == null || shopId == null) return null;
         EntityManager em = JPAConfig.getEntityManager();
         try {
             return em.createQuery(
-                "SELECT o FROM Order o " +
-                "JOIN FETCH o.shop s " + // Vẫn giữ vì có trong Order.java
-                "JOIN FETCH o.user u " + // Vẫn giữ vì có trong Order.java
-                // ĐÃ XÓA: LEFT JOIN FETCH o.items oi
-                // ĐÃ XÓA: LEFT JOIN FETCH oi.product p 
-                "WHERE o.orderId = :id AND s.shopId = :sid",
-                Order.class
-            ).setParameter("id", orderId)
-             .setParameter("sid", shopId)
-             .getSingleResult();
+                            "SELECT o FROM Order o " +
+                                    "JOIN FETCH o.shop s " +
+                                    "JOIN FETCH o.user u " +
+                                    "WHERE o.orderId = :id AND s.shopId = :sid", Order.class)
+                    .setParameter("id", orderId)
+                    .setParameter("sid", shopId)
+                    .getSingleResult();
         } catch (NoResultException e) {
             return null;
         } finally {
             em.close();
         }
     }
-
 }
