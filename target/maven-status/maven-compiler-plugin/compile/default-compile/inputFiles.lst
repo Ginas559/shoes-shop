@@ -15,6 +15,7 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\auth\Logou
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\auth\RegisterServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\auth\ResetPasswordServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\auth\VerifyOtpServlet.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\comment\CommentServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\guest\FavoriteServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\guest\ProductBrowseServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\guest\RecentViewedServlet.java
@@ -23,6 +24,8 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\order\Chec
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\order\OrderServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\payment\VnPayCallbackServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\payment\VnPayCreateServlet.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\publics\PublicChatServlet.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\review\ReviewServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\site\ShopCatalogServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\site\VendorDirectoryServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\TestCloudinaryServlet.java
@@ -88,6 +91,7 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\admin\AdminSh
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\admin\UserService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\AuthService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\CategoryService.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\CommentService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\FavoriteService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\MailService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\OrderService.java
@@ -95,6 +99,7 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\OtpService.ja
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductBrowseService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductImageService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductService.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ReviewService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ShopFeaturedService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ShopService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\StaffService.java

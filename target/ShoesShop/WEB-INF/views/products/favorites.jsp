@@ -49,7 +49,11 @@
         <c:forEach var="it" items="${favorites}">
           <div class="col">
             <a class="card h-100 text-decoration-none" href="${ctx}/product/${it.productId}">
-              <img class="card-img-top" src="${it.imageUrl}" alt="${fn:escapeXml(it.productName)}">
+              <%-- Tạo URL ảnh an toàn với context-path + fallback --%>
+              <c:set var="rawImg" value="${empty it.imageUrl ? '/assets/img/placeholder.png' : it.imageUrl}"/>
+              <c:url value="${rawImg}" var="imgUrl"/>
+              <img class="card-img-top" src="${imgUrl}" alt="${fn:escapeXml(it.productName)}">
+
               <div class="card-body">
                 <div class="fav-title">${fn:escapeXml(it.productName)}</div>
 

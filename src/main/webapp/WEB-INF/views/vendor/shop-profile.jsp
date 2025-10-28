@@ -10,7 +10,7 @@
 	<c:if test="${not empty shop and not empty shop.shopId}">
 		<div class="mb-3 d-flex flex-wrap gap-2">
 			<a href="${ctx}/chat?shopId=${shop.shopId}" class="btn btn-outline-primary">
-				💬 Chat với cửa hàng
+				💬 Chat nội bộ
 			</a>
 
 			<a href="${ctx}/vendor/staffs" class="btn btn-outline-success">
