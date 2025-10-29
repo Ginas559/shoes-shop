@@ -2,7 +2,6 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
-<!-- ✅ Ấn định locale VN để định dạng số/tiền -->
 <fmt:setLocale value="vi_VN" />
 
 <h1 class="h5 mb-3">Xác nhận thanh toán VNPAY</h1>
@@ -29,24 +28,25 @@
 							<c:when test="${not empty addresses}">
 								<div class="vstack gap-2">
 									<c:forEach var="a" items="${addresses}" varStatus="st">
-										<label class="border rounded p-2 d-flex gap-2 align-items-start">
+										<label
+											class="border rounded p-2 d-flex gap-2 align-items-start">
 											<input class="form-check-input mt-1" type="radio"
-												   name="addressId" value="${a.addressId}"
-												   ${a.isDefault || st.first ? 'checked' : ''} />
-											<span>
-												<div class="fw-semibold">${a.receiverName} • ${a.phone}</div>
-												<div class="text-muted small">${a.addressDetail}</div>
-												<c:if test="${a.isDefault}">
+											name="addressId" value="${a.addressId}"
+											${a.isDefault || st.first ? 'checked' : ''} /> <span>
+												<div class="fw-semibold">${a.receiverName}• ${a.phone}</div>
+												<div class="text-muted small">${a.addressDetail}</div> <c:if
+													test="${a.isDefault}">
 													<span class="badge bg-success mt-1">Mặc định</span>
 												</c:if>
-											</span>
+										</span>
 										</label>
 									</c:forEach>
 								</div>
 							</c:when>
 							<c:otherwise>
 								<div class="text-muted">Bạn chưa có địa chỉ giao hàng.</div>
-								<a class="btn btn-outline-primary mt-2" href="${ctx}/user/address/new">➕ Thêm địa chỉ</a>
+								<a class="btn btn-outline-primary mt-2"
+									href="${ctx}/user/address/new">➕ Thêm địa chỉ</a>
 							</c:otherwise>
 						</c:choose>
 					</div>
@@ -72,54 +72,88 @@
 									<c:set var="total" value="0" />
 									<c:forEach var="ci" items="${cart.cartItems}">
 										<tr>
-											<td>
-												<a href="${ctx}/product/${ci.product.productId}" class="text-decoration-none">
-													<c:out value="${ci.product.productName}" />
-												</a>
-											</td>
-											<td class="text-end">
-												<!-- ✅ Hiển thị tiền với ký hiệu ₫ -->
-												<fmt:formatNumber value="${ci.product.price}" type="currency" currencySymbol="₫" />
-											</td>
+											<td><a href="${ctx}/product/${ci.product.productId}"
+												class="text-decoration-none"> <c:out
+														value="${ci.product.productName}" />
+											</a></td>
+											<td class="text-end"><fmt:formatNumber
+													value="${ci.product.price}" type="currency"
+													currencySymbol="₫" /></td>
 											<td class="text-center">${ci.quantity}</td>
-											<td class="text-end">
-												<fmt:formatNumber value="${ci.product.price * ci.quantity}" type="currency" currencySymbol="₫" />
-											</td>
+											<td class="text-end"><fmt:formatNumber
+													value="${ci.product.price * ci.quantity}" type="currency"
+													currencySymbol="₫" /></td>
 										</tr>
-										<c:set var="total" value="${total + (ci.product.price * ci.quantity)}" />
+										<c:set var="total"
+											value="${total + (ci.product.price * ci.quantity)}" />
 									</c:forEach>
 								</tbody>
 								<tfoot>
+									<!-- Giảm giá nếu có -->
+									<c:if
+										test="${not empty sessionScope.voucherDiscount && sessionScope.voucherDiscount > 0}">
+										<tr>
+											<th colspan="3" class="text-end text-success">Giảm giá:</th>
+											<th class="text-end text-success">−<fmt:formatNumber
+													value="${sessionScope.voucherDiscount}" type="currency"
+													currencySymbol="₫" />
+											</th>
+										</tr>
+									</c:if>
 									<tr>
 										<th colspan="3" class="text-end">Tổng cộng:</th>
-										<th class="text-end">
-											<fmt:formatNumber value="${total}" type="currency" currencySymbol="₫" />
-										</th>
+										<th class="text-end"><fmt:formatNumber
+												value="${total - (sessionScope.voucherDiscount != null ? sessionScope.voucherDiscount : 0)}"
+												type="currency" currencySymbol="₫" /></th>
 									</tr>
 								</tfoot>
 							</table>
 						</div>
 
-						<div class="d-flex justify-content-between mt-3">
-							<a href="${ctx}/cart" class="btn btn-outline-secondary">← Quay lại giỏ hàng</a>
-							<!-- Không còn nút COD -->
+						<!-- Nhập mã giảm giá -->
+						<div class="mt-3">
+							<label class="form-label fw-semibold">Mã giảm giá
+								(Voucher)</label>
+							<div class="input-group">
+								<input type="text" id="voucherCode" class="form-control"
+									placeholder="Nhập mã giảm giá..." />
+								<!-- NOTE: thêm data-apply-url + onclick để chắc chắn gọi được hàm -->
+								<button type="button" id="applyVoucherBtn"
+									class="btn btn-outline-success"
+									data-apply-url="<c:url value='/api/voucher/apply'/>"
+									onclick="return window.applyVoucher && window.applyVoucher();">
+									Áp dụng</button>
+							</div>
+							<div id="voucherMessage" class="small mt-2"></div>
 						</div>
 
-						<!-- ====================== -->
-						<!-- ✅ Thanh toán VNPAY (phương thức duy nhất) -->
-						<!-- ====================== -->
+
+						<!-- Hiển thị mã đang dùng -->
+						<c:if test="${not empty sessionScope.voucherCode}">
+							<div class="alert alert-success mt-2 py-2 mb-0">
+								✅ Đã áp dụng mã: <strong>${sessionScope.voucherCode}</strong>
+							</div>
+						</c:if>
+
+						<div class="d-flex justify-content-between mt-3">
+							<a href="${ctx}/cart" class="btn btn-outline-secondary">←
+								Quay lại giỏ hàng</a>
+						</div>
+
+						<!-- Thanh toán VNPAY -->
 						<c:if test="${not empty addresses}">
-							<hr class="my-4"/>
+							<hr class="my-4" />
 							<div class="vstack gap-2">
 								<div class="d-flex align-items-center gap-2">
-									<span class="fw-semibold">Thanh toán qua</span>
-									<img src="https://sandbox.vnpayment.vn/paymentv2/images/icons/logo.svg" alt="VNPAY" style="height:22px"/>
+									<span class="fw-semibold">Thanh toán qua</span> <img
+										src="https://sandbox.vnpayment.vn/paymentv2/images/icons/logo.svg"
+										alt="VNPAY" style="height: 22px" />
 								</div>
 
 								<div class="row g-2">
 									<div class="col-12 col-md-6">
-										<label class="form-label small text-muted">Ngân hàng (tùy chọn)</label>
-										<select id="vnpBankCode" class="form-select">
+										<label class="form-label small text-muted">Ngân hàng
+											(tùy chọn)</label> <select id="vnpBankCode" class="form-select">
 											<option value="">— Chọn ngân hàng —</option>
 											<option value="NCB">NCB (test)</option>
 											<option value="VNPAYQR">VNPAYQR</option>
@@ -131,18 +165,16 @@
 
 								<div>
 									<button id="payVnpayBtn" class="btn btn-primary">
-										Thanh toán qua VNPAY
-									</button>
-									<small class="text-muted ms-2">
-										Sẽ chuyển hướng sang cổng thanh toán VNPAY.
-									</small>
+										Thanh toán qua VNPAY</button>
+									<small class="text-muted ms-2"> Sẽ chuyển hướng sang
+										cổng thanh toán VNPAY. </small>
 								</div>
 
-								<!-- Tổng tiền để JS đọc (ẩn) -->
-								<input type="hidden" id="totalAmountHidden" value="${total}" />
+								<!-- ✅ Tổng tiền đã trừ giảm giá -->
+								<input type="hidden" id="totalAmountHidden"
+									value="${total - (sessionScope.voucherDiscount != null ? sessionScope.voucherDiscount : 0)}" />
 							</div>
 						</c:if>
-						<!-- /VNPAY -->
 					</div>
 				</div>
 			</div>
@@ -157,59 +189,102 @@
 </c:choose>
 
 <!-- ====================== -->
-<!-- ✅ JS gọi API tạo URL VNPAY và redirect -->
+<!-- ✅ JS Áp dụng voucher + Thanh toán -->
 <!-- ====================== -->
 <script>
 (function() {
-	const btn = document.getElementById('payVnpayBtn');
-	if (!btn) return;
+  // Lấy context-path do JSP render
+  const ctx = '${ctx}';
 
-	btn.addEventListener('click', function (e) {
-		e.preventDefault();
+  // ====== ÁP DỤNG VOUCHER ======
+  window.applyVoucher = function() {
+    const btn = document.getElementById('applyVoucherBtn');
+    const codeInput = document.getElementById('voucherCode');
+    const msgBox = document.getElementById('voucherMessage');
 
-		// Phải chọn địa chỉ giao hàng
-		const addrChecked = document.querySelector('input[name="addressId"]:checked');
-		if (!addrChecked) {
-			alert('Vui lòng chọn địa chỉ giao hàng trước.');
-			return;
-		}
+    if (!btn || !codeInput || !msgBox) return false;
 
-		// Tổng tiền (VND). Service sẽ tự x100 khi ký với VNPAY.
-		let amountRaw = document.getElementById('totalAmountHidden')?.value || '0';
-		let amount = Math.round(Number(amountRaw));
-		if (!Number.isFinite(amount) || amount <= 0) {
-			alert('Tổng tiền không hợp lệ.');
-			return;
-		}
+    const code = (codeInput.value || '').trim();
+    if (!code) {
+      msgBox.textContent = '⚠️ Vui lòng nhập mã giảm giá.';
+      msgBox.className = 'small mt-2 text-warning';
+      return false;
+    }
 
-		const addressId = addrChecked.value;
-		const bankCode  = document.getElementById('vnpBankCode')?.value || '';
+    const applyUrl = btn.getAttribute('data-apply-url') || (ctx + '/api/voucher/apply');
 
-		// Gọi backend tạo payment URL — chỉ 3 tham số: amount, bankCode, addressId
-		const url = '${ctx}/api/payment/create';
-		const body = new URLSearchParams({
-			amount: String(amount),
-			bankCode: bankCode,
-			addressId: String(addressId)
-		});
+    msgBox.textContent = 'Đang kiểm tra mã...';
+    msgBox.className = 'small mt-2 text-muted';
 
-		fetch(url, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: body.toString()
-		})
-		.then(res => res.json())
-		.then(data => {
-			if (data && data.success && data.paymentUrl) {
-				window.location.href = data.paymentUrl; // Redirect sang VNPAY
-			} else {
-				alert(data?.message || 'Không tạo được liên kết thanh toán.');
-			}
-		})
-		.catch(err => {
-			console.error(err);
-			alert('Lỗi kết nối. Vui lòng thử lại.');
-		});
-	});
+    fetch(applyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ code })
+    })
+    .then(async res => {
+      const text = await res.text();
+      try { return JSON.parse(text); }
+      catch (e) {
+        console.error('Voucher response (not JSON):', text);
+        throw new Error('Phản hồi không hợp lệ từ server');
+      }
+    })
+    .then(data => {
+      console.log('Voucher API response:', data);
+      if (data.success) {
+        msgBox.textContent = data.message || '✅ Áp dụng thành công!';
+        msgBox.className = 'small mt-2 text-success';
+        // reload để bảng tổng tiền cập nhật
+        setTimeout(() => location.reload(), 600);
+      } else {
+        msgBox.textContent = '❌ ' + (data.message || 'Mã không hợp lệ hoặc hết hạn.');
+        msgBox.className = 'small mt-2 text-danger';
+      }
+    })
+    .catch(err => {
+      console.error('Apply voucher error:', err);
+      msgBox.textContent = '❌ Lỗi: ' + err.message;
+      msgBox.className = 'small mt-2 text-danger';
+    });
+
+    return false;
+  };
+
+  // ====== VNPAY ======
+  const payBtn = document.getElementById('payVnpayBtn');
+  if (payBtn) {
+    payBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+
+      const addrChecked = document.querySelector('input[name="addressId"]:checked');
+      if (!addrChecked) { alert('⚠️ Vui lòng chọn địa chỉ giao hàng trước.'); return; }
+
+      let amountRaw = document.getElementById('totalAmountHidden')?.value || '0';
+      let amount = Math.round(Number(amountRaw));
+      if (!Number.isFinite(amount) || amount <= 0) { alert('⚠️ Tổng tiền không hợp lệ.'); return; }
+
+      const addressId = addrChecked.value;
+      const bankCode  = document.getElementById('vnpBankCode')?.value || '';
+      const payUrl = '<c:url value="/api/payment/create"/>';
+
+      fetch(payUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ amount: String(amount), bankCode, addressId }).toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.success && data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+        } else {
+          alert('❌ ' + (data?.message || 'Không tạo được liên kết thanh toán.'));
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('❌ Lỗi kết nối. Vui lòng thử lại.');
+      });
+    });
+  }
 })();
 </script>

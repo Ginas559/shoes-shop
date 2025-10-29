@@ -58,6 +58,7 @@ vn\iotstar\controllers\vendor\VendorVoucherFormServlet.class
 vn\iotstar\utilities\EmailUtil$1.class
 vn\iotstar\entities\Shipper.class
 vn\iotstar\services\ReviewService.class
+vn\iotstar\controllers\api\VoucherApplyServlet.class
 vn\iotstar\services\ViewedService.class
 vn\iotstar\DAO\IShopDao.class
 vn\iotstar\controllers\user\AddressServlet.class

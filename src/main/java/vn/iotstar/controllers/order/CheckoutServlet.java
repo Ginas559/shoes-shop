@@ -101,12 +101,24 @@ public class CheckoutServlet extends HttpServlet {
                 return;
             }
 
-            // Tính tổng tiền
+            // =============================
+            // ✅ Tính tổng tiền (có giảm giá)
+            // =============================
             BigDecimal total = BigDecimal.ZERO;
             for (CartItem ci : cart.getCartItems()) {
                 BigDecimal price = ci.getProduct().getPrice();
                 total = total.add(price.multiply(BigDecimal.valueOf(ci.getQuantity())));
             }
+
+            // --- Áp dụng giảm giá voucher (nếu có) ---
+            BigDecimal discount = BigDecimal.ZERO;
+            Object v = session.getAttribute("voucherDiscount");
+            if (v instanceof BigDecimal) discount = (BigDecimal) v;
+            if (discount.compareTo(BigDecimal.ZERO) < 0) discount = BigDecimal.ZERO;
+
+            BigDecimal finalTotal = total.subtract(discount);
+            if (finalTotal.compareTo(BigDecimal.ZERO) < 0)
+                finalTotal = BigDecimal.ZERO;
 
             // Lấy shop đầu tiên trong giỏ (giả định 1 shop)
             Shop shop = cart.getCartItems().get(0).getProduct().getShop();
@@ -116,7 +128,7 @@ public class CheckoutServlet extends HttpServlet {
             order.setUser(em.getReference(User.class, userId));
             order.setShop(shop);
             order.setAddress(address);
-            order.setTotalAmount(total);
+            order.setTotalAmount(finalTotal); // ✅ Đã trừ giảm giá
             order.setPaymentMethod(Order.PaymentMethod.COD);
             order.setStatus(Order.OrderStatus.NEW);
             em.persist(order);
@@ -136,7 +148,6 @@ public class CheckoutServlet extends HttpServlet {
                 em.persist(oi);
             }
 
-
             tx.commit();
             session.setAttribute("flash", "Đặt hàng thành công! Mã đơn #" + order.getOrderId());
         } catch (Exception e) {
@@ -148,4 +159,5 @@ public class CheckoutServlet extends HttpServlet {
 
         resp.sendRedirect(req.getContextPath() + "/orders");
     }
+
 }
