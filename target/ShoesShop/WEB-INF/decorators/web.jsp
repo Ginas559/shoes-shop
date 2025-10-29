@@ -29,27 +29,24 @@
 
 			<div class="collapse navbar-collapse" id="mainNav">
 				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
-					
-					<li class="nav-item">
-						<a class="nav-link" href="${pageContext.request.contextPath}/products">Sản phẩm</a>
-					</li>
-					
-					<li class="nav-item">
-						<a class="nav-link" href="${pageContext.request.contextPath}/favorites">Yêu thích</a>
+
+					<li class="nav-item"><a class="nav-link"
+						href="${pageContext.request.contextPath}/products">Sản phẩm</a></li>
+
+					<li class="nav-item"><a class="nav-link"
+						href="${pageContext.request.contextPath}/favorites">Yêu thích</a>
 					</li>
 
-					<li class="nav-item">
-						<a class="nav-link" href="${pageContext.request.contextPath}/cart">Giỏ hàng</a>
-					</li>
+					<li class="nav-item"><a class="nav-link"
+						href="${pageContext.request.contextPath}/cart">Giỏ hàng</a></li>
 
-					<li class="nav-item">
-						<a class="nav-link" href="${pageContext.request.contextPath}/orders">Đơn hàng của tôi</a>
-					</li>
+					<li class="nav-item"><a class="nav-link"
+						href="${pageContext.request.contextPath}/orders">Đơn hàng của
+							tôi</a></li>
 
-					<li class="nav-item">
-						<a class="nav-link" href="${pageContext.request.contextPath}/vendors">Vendor</a>
-					</li>
-					
+					<li class="nav-item"><a class="nav-link"
+						href="${pageContext.request.contextPath}/vendors">Vendor</a></li>
+
 					<c:if test="${sessionScope.role == 'VENDOR'}">
 						<li class="nav-item dropdown"><a
 							class="nav-link dropdown-toggle" href="#" role="button"
@@ -70,6 +67,9 @@
 								<li><a class="dropdown-item"
 									href="${pageContext.request.contextPath}/vendor/statistics/view">Thống
 										kê</a></li>
+								<li class="nav-item"><a class="nav-link"
+									href="${pageContext.request.contextPath}/vendor/vouchers">🎟️
+										Voucher</a></li>
 							</ul></li>
 					</c:if>
 				</ul>
