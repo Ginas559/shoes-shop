@@ -21,4 +21,9 @@ public class ProductVariantService {
     public void deleteVariant(Long variantId) {
         dao.delete(variantId);
     }
+
+    /** ✅ Dùng để hiển thị “Tồn” ở bảng sản phẩm = SUM stock của các biến thể. */
+    public int sumStockByProductId(Long productId) {
+        return dao.sumStockByProductId(productId); // giữ nguyên int
+    }
 }

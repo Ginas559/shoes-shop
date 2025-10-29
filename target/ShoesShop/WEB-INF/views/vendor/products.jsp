@@ -51,11 +51,16 @@
 				</div>
 
 				<div class="col-md-2">
-					<label class="form-label">Tồn</label> <input name="stock"
-						type="number" min="0" class="form-control" required
-						value="${p.stock}" />
+					<label class="form-label">Tồn</label>
+					<c:choose>
+						<c:when test="${empty p}">
+							<input name="stock" type="number" class="form-control" value="0" readonly/>
+						</c:when>
+						<c:otherwise>
+							<input name="stock" type="number" min="0" class="form-control" required value="${p.stock}"/>
+						</c:otherwise>
+					</c:choose>
 				</div>
-
 				<div class="col-md-4">
 					<label class="form-label">Danh mục</label> <select
 						name="categoryId" class="form-select" required>
@@ -179,7 +184,7 @@
 								<td><c:out
 										value="${empty it.category ? '—' : it.category.categoryName}" /></td>
 								<td>${it.price}</td>
-								<td>${it.stock}</td>
+								<td>${stocks[it.productId]}</td>
 								<td><c:choose>
 										<c:when test="${not empty it.shop}">${it.shop.shopName}</c:when>
 										<c:when test="${not empty shop}">${shop.shopName}</c:when>
@@ -194,18 +199,16 @@
               <c:param name='id' value='${it.productId}'/>
            </c:url>">Sửa</a>
 
-									<!-- ⚙️ Biến thể (size/màu) --> <a
+									<a
 									class="btn btn-sm btn-outline-warning"
 									href="<c:url value='/vendor/product/variants'>
               <c:param name='productId' value='${it.productId}'/>
            </c:url>">Biến
-										thể</a> <!-- 🧩 Thuộc tính giày (brand/material/gender/style) -->
-									<a class="btn btn-sm btn-outline-secondary"
+										thể</a> <a class="btn btn-sm btn-outline-secondary"
 									href="<c:url value='/vendor/attribute'>
               <c:param name='productId' value='${it.productId}'/>
            </c:url>">Thuộc
-										tính</a> <!-- CHỈ 1 nút: Ẩn/Hiện (giữ nguyên AJAX toggle) -->
-									<button type="button"
+										tính</a> <button type="button"
 										class="btn btn-sm btn-toggle ${it.status == 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'}"
 										data-id="${it.productId}">${it.status == 'ACTIVE' ? 'Ẩn' : 'Hiện'}
 									</button></td>

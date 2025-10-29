@@ -22,6 +22,7 @@ import vn.iotstar.services.ProductImageService;
 import vn.iotstar.services.ProductService;
 import vn.iotstar.services.StatisticService;
 import vn.iotstar.utils.SessionUtil;
+import vn.iotstar.services.ProductVariantService;
 
 @WebServlet(urlPatterns = {"/vendor/products", "/vendor/products/*"})
 @MultipartConfig(maxFileSize = 10 * 1024 * 1024)
@@ -31,7 +32,8 @@ public class VendorProductServlet extends HttpServlet {
     private final CategoryService categoryService = new CategoryService();
     private final ProductImageService productImageService = new ProductImageService();
     private final StatisticService helper = new StatisticService();
-
+    private final ProductVariantService variantService = new ProductVariantService();
+    
     /**
      * Lưu ý JWT:
      * - AuthFilter (JWT) đã gắn sẵn 3 thuộc tính vào request nếu token hợp lệ: uid, role, shopId.
@@ -130,6 +132,16 @@ public class VendorProductServlet extends HttpServlet {
             }
             req.setAttribute("thumbnails", thumbnails);
 
+            // NEW: tổng tồn từ các biến thể (SUM stock), nếu chưa có biến thể => 0
+            Map<Long, Integer> stocks = new HashMap<>();
+            for (Product p : pr.items) {
+                int sum = variantService.sumStockByProductId(p.getProductId());
+                // fallback: nếu chưa có variant, dùng product.stock (giữ tương thích dữ liệu cũ)
+                if (sum == 0 && p.getStock() != null) sum = p.getStock();
+                stocks.put(p.getProductId(), sum);
+            }
+            req.setAttribute("stocks", stocks);
+            
             req.getRequestDispatcher("/WEB-INF/views/vendor/products.jsp").forward(req, resp);
             return;
         }
@@ -166,15 +178,18 @@ public class VendorProductServlet extends HttpServlet {
 
         if ("/add".equals(path)) {
             List<String> errors = new ArrayList<>();
+            
+            // --- BẮT ĐẦU PHẦN CHỈNH SỬA (BỎ KIỂM TRA TỒN KHO) ---
             String name = req.getParameter("name");
             String priceStr = req.getParameter("price");
-            String stockStr = req.getParameter("stock");
+            // String stockStr = req.getParameter("stock"); // <- KHÔNG dùng để validate nữa
             String catStr = req.getParameter("categoryId");
 
             if (name == null || name.trim().length() < 3) errors.add("Tên tối thiểu 3 ký tự.");
             try { new BigDecimal(priceStr); } catch (Exception e) { errors.add("Giá không hợp lệ."); }
-            try { Integer.parseInt(stockStr); } catch (Exception e) { errors.add("Tồn không hợp lệ."); }
+            // try { Integer.parseInt(stockStr); } catch (Exception e) { errors.add("Tồn không hợp lệ."); } // <- bỏ
             try { Long.valueOf(catStr); } catch (Exception e) { errors.add("Danh mục không hợp lệ."); }
+            // --- KẾT THÚC PHẦN CHỈNH SỬA ---
 
             Part part = req.getPart("image");
             String fileErr = validateImagePart(part);
@@ -213,9 +228,10 @@ public class VendorProductServlet extends HttpServlet {
             Product p = productService.findById(productId);
             if (!ensureOwnedOr403(shop, p, resp)) return;
 
+            // Vẫn giữ validation cho stock ở nhánh /update (vì form có thể vẫn gửi lên)
             String name = req.getParameter("name");
             String priceStr = req.getParameter("price");
-            String stockStr = req.getParameter("stock");
+            String stockStr = req.getParameter("stock"); 
             if (name == null || name.trim().length() < 3) errors.add("Tên tối thiểu 3 ký tự.");
             try { new BigDecimal(priceStr); } catch (Exception e) { errors.add("Giá không hợp lệ."); }
             try { Integer.parseInt(stockStr); } catch (Exception e) { errors.add("Tồn không hợp lệ."); }

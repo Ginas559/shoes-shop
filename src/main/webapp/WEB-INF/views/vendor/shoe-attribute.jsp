@@ -1,11 +1,10 @@
-<!-- filepath: src/main/webapp/WEB-INF/views/vendor/shoe-attribute.jsp -->
+<%-- filepath: src/main/webapp/WEB-INF/views/vendor/shoe-attribute.jsp --%>
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 
 <main class="container py-4">
 
-    <!-- HÀNG BUTTON CHUYỂN TRANG -->
     <div class="mb-4 d-flex flex-wrap gap-3">
         <a href="${ctx}/vendor/products" class="btn btn-primary">🛍️ Quản
             lý sản phẩm</a>
@@ -18,6 +17,13 @@
                 class="btn btn-outline-primary">💬 Chat công khai</a>
         </c:if>
     </div>
+    
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            🎉 **Thành công!** ${successMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </c:if>
 
     <h2 class="mb-3">Thuộc tính giày: ${product.productName}</h2>
 

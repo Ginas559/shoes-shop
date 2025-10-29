@@ -8,7 +8,8 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-
+import jakarta.persistence.EntityManager;
+import vn.iotstar.configs.JPAConfig;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 
@@ -71,6 +72,21 @@ public class ProductVariantServlet extends HttpServlet {
                     "resource_type", "image"
             ));
             return String.valueOf(res.get("secure_url"));
+        }
+    }
+    
+    /** Tổng tồn của mọi biến thể thuộc productId (nếu chưa có biến thể => 0). */
+    public int sumStockByProductId(Long productId) {
+        EntityManager em = JPAConfig.getEntityManager();
+        try {
+            Integer total = em.createQuery(
+                    "SELECT COALESCE(SUM(v.stock),0) FROM ProductVariant v WHERE v.product.productId = :pid",
+                    Integer.class)
+                .setParameter("pid", productId)
+                .getSingleResult();
+            return (total != null) ? total : 0;
+        } finally {
+            em.close();
         }
     }
 }
