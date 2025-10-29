@@ -17,6 +17,7 @@ vn\iotstar\controllers\auth\LoginServlet.class
 vn\iotstar\entities\UserVerification$VerificationType.class
 vn\iotstar\controllers\guest\FavoriteServlet.class
 vn\iotstar\repositories\UserRepository.class
+vn\iotstar\utils\JwtUtil.class
 vn\iotstar\controllers\payment\VnPayCreateServlet.class
 vn\iotstar\services\ProductBrowseService.class
 vn\iotstar\entities\User$Role.class

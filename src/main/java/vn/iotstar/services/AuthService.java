@@ -2,12 +2,23 @@
 package vn.iotstar.services;
 
 import vn.iotstar.entities.User;
+import vn.iotstar.entities.Shop;
 import vn.iotstar.repositories.UserRepository;
 import vn.iotstar.utils.PasswordUtil;
+import vn.iotstar.utils.JwtUtil;
 
+/**
+ * Gợi nhớ:
+ * - Các hàm đăng ký/đăng nhập giữ nguyên như cũ để không ảnh hưởng nơi khác.
+ * - Bổ sung issueAccessToken(User) để phát JWT sau khi login.
+ *   + Token chứa: uid, role, shopId (nếu là vendor).
+ *   + TTL mặc định 30 phút; có thể chỉnh khi cần.
+ */
 public class AuthService {
 
     private final UserRepository userRepo = new UserRepository();
+    // Dùng lại StatisticService để tra cứu shop theo owner khi cần nhúng shopId vào token
+    private final StatisticService statisticService = new StatisticService();
 
     /** Đăng ký mặc định (giữ nguyên method cũ để không phá code nơi khác) */
     public User registerNewUser(String firstname, String lastname, String email, String phone, String rawPassword) {
@@ -56,5 +67,24 @@ public class AuthService {
         boolean ok = PasswordUtil.matches(u.getSalt() + rawPassword, u.getHashedPassword());
         if (!ok) throw new IllegalStateException("Mật khẩu không đúng.");
         return u;
+    }
+
+    /**
+     * JWT: phát access token cho user đã xác thực.
+     * - role lấy từ u.getRole()
+     * - với vendor: tra shop theo ownerId để gắn shopId vào claim, giúp filter/servlet kiểm soát truy cập theo shop.
+     * - TTL mặc định: 30 phút.
+     */
+    public String issueAccessToken(User u) {
+        long ttlMillis = 30 * 60 * 1000L; // 30 phút
+        String role = (u.getRole() == null) ? "" : u.getRole().name();
+
+        Long shopId = null;
+        if ("VENDOR".equals(role)) {
+            Shop s = statisticService.findShopByOwner(u.getId());
+            if (s != null) shopId = s.getShopId();
+        }
+
+        return JwtUtil.generateAccessToken(u.getId(), role, shopId, ttlMillis);
     }
 }
