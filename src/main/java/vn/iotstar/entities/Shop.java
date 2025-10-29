@@ -50,6 +50,11 @@ public class Shop {
     @Column(name = "cover_url", length = 500)
     private String coverUrl;
     
+ // thêm vào class Shop
+    @Column(name = "slug", length = 160, unique = true)
+    private String slug;
+
+    
     // Đã hợp nhất, chỉ giữ lại một định nghĩa với khởi tạo mặc định.
     // Quan hệ ngược để tránh N+1 và hỗ trợ hiển thị shopName từ Product
     @OneToMany(mappedBy = "shop", fetch = FetchType.LAZY)
