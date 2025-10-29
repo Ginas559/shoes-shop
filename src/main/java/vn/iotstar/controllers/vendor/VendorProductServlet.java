@@ -32,8 +32,24 @@ public class VendorProductServlet extends HttpServlet {
     private final ProductImageService productImageService = new ProductImageService();
     private final StatisticService helper = new StatisticService();
 
-    /** Resolve shop cho owner/staff. */
+    /**
+     * Lưu ý JWT:
+     * - AuthFilter (JWT) đã gắn sẵn 3 thuộc tính vào request nếu token hợp lệ: uid, role, shopId.
+     * - Ở đây ưu tiên dùng role/shopId từ JWT để xác định shop. Nếu không có JWT thì fallback session như cũ.
+     */
     private Shop resolveShop(HttpServletRequest req) {
+        // Ưu tiên JWT: lấy từ request attributes do AuthFilter gắn vào
+        Object jwtRoleObj = req.getAttribute("role");
+        Object jwtShopIdObj = req.getAttribute("shopId");
+        String jwtRole = (jwtRoleObj instanceof String) ? (String) jwtRoleObj : null;
+        Long jwtShopId = (jwtShopIdObj instanceof Long) ? (Long) jwtShopIdObj : null;
+
+        // Trường hợp có JWT và là vendor: dùng shopId từ token để tìm đúng shop
+        if ("VENDOR".equals(jwtRole) && jwtShopId != null) {
+            return helper.findShopById(jwtShopId);
+        }
+
+        // Fallback session như logic cũ
         Long uid  = SessionUtil.currentUserId(req);
         String role = SessionUtil.currentRole(req);
         HttpSession ss = req.getSession(false);
@@ -41,9 +57,10 @@ public class VendorProductServlet extends HttpServlet {
                 ? (Long) ss.getAttribute("staffShopId") : null;
 
         if ("VENDOR".equals(role)) {
+            // Trường hợp này dành cho lối cũ dùng session
             return helper.findShopByOwner(uid);
         }
-        // hỗ trợ cả USER hoặc STAFF (tuỳ hệ thống)
+        // Hỗ trợ cả USER hoặc STAFF qua session (khi chưa dùng claim staff trong JWT)
         if ("USER".equals(role) || "STAFF".equals(role)) {
             Long sid = staffShopId;
             if (sid == null && ss != null) {
@@ -79,7 +96,7 @@ public class VendorProductServlet extends HttpServlet {
         }
         req.setAttribute("shop", shop);
 
-        // flash errors từ session (nếu có)
+        // Lấy lỗi đã lưu vào session (nếu có) để hiển thị một lần
         HttpSession session = req.getSession(false);
         if (session != null && session.getAttribute("flashErrors") != null) {
             @SuppressWarnings("unchecked")

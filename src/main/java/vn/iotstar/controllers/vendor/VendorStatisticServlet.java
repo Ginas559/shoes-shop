@@ -24,8 +24,6 @@ public class VendorStatisticServlet extends HttpServlet {
     private final StatisticService statisticService = new StatisticService();
     private final Gson gson = new Gson();
 
- // filepath: src/main/java/vn/iotstar/controllers/vendor/VendorStatisticServlet.java
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -39,13 +37,26 @@ public class VendorStatisticServlet extends HttpServlet {
 
         resp.setContentType("application/json; charset=UTF-8");
 
-        Long uid = SessionUtil.currentUserId(req);
-        if (uid == null) {
-            resp.getWriter().write("{\"labels\":[],\"current\":[],\"previous\":[],\"values\":[],\"productRevenue\":[]}");
-            return;
+        /*
+         * Gợi nhớ về JWT: AuthFilter (JWT) đã gắn uid/role/shopId vào request nếu token hợp lệ.
+         * 1) Ưu tiên dùng shopId từ JWT để tìm shop của vendor.
+         * 2) Nếu không có JWT thì quay lại lối cũ dựa trên session (findShopByOwner).
+         */
+        Shop shop = null;
+        Object jwtRoleObj = req.getAttribute("role");
+        Object jwtShopIdObj = req.getAttribute("shopId");
+        String jwtRole = (jwtRoleObj instanceof String) ? (String) jwtRoleObj : null;
+        Long jwtShopId = (jwtShopIdObj instanceof Long) ? (Long) jwtShopIdObj : null;
+
+        if ("VENDOR".equals(jwtRole) && jwtShopId != null) {
+            shop = statisticService.findShopById(jwtShopId);
+        } else {
+            Long uid = SessionUtil.currentUserId(req);
+            if (uid != null) {
+                shop = statisticService.findShopByOwner(uid);
+            }
         }
 
-        Shop shop = statisticService.findShopByOwner(uid);
         if (shop == null) {
             resp.getWriter().write("{\"labels\":[],\"current\":[],\"previous\":[],\"values\":[],\"productRevenue\":[]}");
             return;
@@ -55,93 +66,85 @@ public class VendorStatisticServlet extends HttpServlet {
         LocalDate to   = parseDate(req.getParameter("to"));
         Integer year   = parseInt(req.getParameter("year"));
 
-        // *** LOGIC XỬ LÝ LỌC VÀ LẤY DỮ LIỆU ***
+        // Xác định khoảng thời gian cần thống kê
         LocalDateTime start = null, end = null, prevStart = null, prevEnd = null;
         boolean hasDateFilter = false;
-        
+
         if (year != null) {
             hasDateFilter = true;
-            // Lọc theo năm
-            start = LocalDate.of(year,1,1).atStartOfDay();
+            start = LocalDate.of(year, 1, 1).atStartOfDay();
             end   = LocalDate.of(year, 12, 31).atTime(23, 59, 59);
             prevStart = start.minusYears(1);
             prevEnd   = end.minusYears(1);
         } else if (from != null && to != null) {
             hasDateFilter = true;
-            // Lọc theo phạm vi ngày
             start = from.atStartOfDay();
             end   = to.plusDays(1).atStartOfDay().minusNanos(1);
             prevStart = start.minusYears(1);
             prevEnd   = end.minusYears(1);
         }
 
-        Map<String,Object> series;
+        Map<String, Object> series;
         List<Object[]> prodRows;
-        
+
         if (hasDateFilter) {
-            // Trường hợp 1: CÓ BỘ LỌC NGÀY/NĂM
+            // Có lọc ngày/năm: lấy chuỗi dữ liệu theo khoảng thời gian chọn
             series = statisticService.buildMonthSeries(shop.getShopId(), start, end, prevStart, prevEnd);
-            // Thống kê sản phẩm CÓ LỌC NGÀY
+            // Doanh thu theo sản phẩm trong khoảng lọc
             prodRows = statisticService.getProductRevenueBetween(shop.getShopId(), start, end);
         } else {
-            // Trường hợp 2: KHÔNG CÓ BỘ LỌC (Tải trang lần đầu)
-            // Lấy dữ liệu biểu đồ tháng (mặc định lấy theo năm hiện tại)
+            // Không có lọc: mặc định theo năm hiện tại và sản phẩm trọn đời
             int currentYear = LocalDate.now().getYear();
-            LocalDateTime defaultStart = LocalDate.of(currentYear,1,1).atStartOfDay();
+            LocalDateTime defaultStart = LocalDate.of(currentYear, 1, 1).atStartOfDay();
             LocalDateTime defaultEnd   = LocalDate.of(currentYear, 12, 31).atTime(23, 59, 59);
-            
-            series = statisticService.buildMonthSeries(shop.getShopId(), 
-                        defaultStart, defaultEnd, 
-                        defaultStart.minusYears(1), defaultEnd.minusYears(1));
-                        
-            // Thống kê sản phẩm TRỌN ĐỜI (Sử dụng hàm không lọc ngày)
-            prodRows = statisticService.getProductRevenueLifetime(shop.getShopId()); 
+
+            series = statisticService.buildMonthSeries(
+                    shop.getShopId(),
+                    defaultStart, defaultEnd,
+                    defaultStart.minusYears(1), defaultEnd.minusYears(1)
+            );
+
+            prodRows = statisticService.getProductRevenueLifetime(shop.getShopId());
         }
-        
-        // 💥 LOGGING CÓ THÊM DÒNG XUỐNG DÒNG ĐỂ LÀM NỔI BẬT 💥
-        System.out.println("\n\n\n");
-        System.out.println("====================================================");
-        System.out.println("--- KẾT QUẢ THỐNG KÊ SẢN PHẨM TRẢ VỀ TỪ SERVICE ---");
-        System.out.println("====================================================");
+
+        // Logging ngắn gọn để kiểm tra dữ liệu trả về từ service (dễ nhìn khi chạy dev)
+        System.out.println("===== VendorStatisticServlet: product revenue rows =====");
         if (prodRows == null || prodRows.isEmpty()) {
-            System.out.println("Danh sách sản phẩm trống (hoặc trả về NULL).");
+            System.out.println("No product rows.");
         } else {
             for (Object[] row : prodRows) {
-                // row[0] là tên sản phẩm (String)
-                // row[1] là tổng doanh thu (BigDecimal)
-                System.out.printf("Sản phẩm: %s | Doanh thu: %s\n", row[0], row[1]);
+                System.out.printf("Product=%s | Total=%s%n", row[0], row[1]);
             }
         }
-        System.out.println("----------------------------------------------------");
-        System.out.println("\n\n\n");
-
+        System.out.println("========================================================");
 
         // Đóng gói dữ liệu sản phẩm thành JSON
-        List<Map<String,Object>> productRevenue = new ArrayList<>();
+        List<Map<String, Object>> productRevenue = new ArrayList<>();
         for (Object[] r : prodRows) {
-            Map<String,Object> m = new HashMap<>();
-            m.put("product", r[0]==null ? "(Không tên)" : r[0].toString());
-            
+            Map<String, Object> m = new HashMap<>();
+            m.put("product", r[0] == null ? "(Không tên)" : r[0].toString());
+
             Object totalObj = r[1];
-            BigDecimal total = (totalObj instanceof BigDecimal) 
-                ? (BigDecimal) totalObj 
-                : new BigDecimal(totalObj != null ? totalObj.toString() : "0");
-                
+            BigDecimal total = (totalObj instanceof BigDecimal)
+                    ? (BigDecimal) totalObj
+                    : new BigDecimal(totalObj != null ? totalObj.toString() : "0");
+
             m.put("total", total);
             productRevenue.add(m);
         }
-        series.put("productRevenue", productRevenue); 
+        series.put("productRevenue", productRevenue);
 
-        // Gửi JSON cuối cùng
+        // Gửi JSON
         resp.getWriter().write(gson.toJson(series));
     }
 
-    private LocalDate parseDate(String s){
-        try { return (s==null || s.isBlank()) ? null : LocalDate.parse(s); }
-        catch(Exception e){ return null; }
+    private LocalDate parseDate(String s) {
+        try { return (s == null || s.isBlank()) ? null : LocalDate.parse(s); }
+        catch (Exception e) { return null; }
     }
-    private Integer parseInt(String s){
-        try { return (s==null || s.isBlank()) ? null : Integer.valueOf(s); }
-        catch(Exception e){ return null; }
+
+    private Integer parseInt(String s) {
+        try { return (s == null || s.isBlank()) ? null : Integer.valueOf(s); }
+        catch (Exception e) { return null; }
     }
 }

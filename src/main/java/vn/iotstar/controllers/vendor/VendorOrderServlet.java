@@ -21,7 +21,23 @@ public class VendorOrderServlet extends HttpServlet {
     private final OrderService orderService = new OrderService();
     private final StatisticService helper = new StatisticService();
 
+    /**
+     * Gợi nhớ về JWT:
+     * - AuthFilter (JWT) gắn sẵn vào request: uid, role, shopId. Nếu có thì ưu tiên dùng để xác định shop.
+     * - Nếu không có JWT, quay về cơ chế session như hiện tại (giữ staffShopId cho staff).
+     */
     private Shop resolveShop(HttpServletRequest req) {
+        // Ưu tiên JWT: đọc role/shopId do AuthFilter gắn
+        Object jwtRoleObj = req.getAttribute("role");
+        Object jwtShopIdObj = req.getAttribute("shopId");
+        String jwtRole = (jwtRoleObj instanceof String) ? (String) jwtRoleObj : null;
+        Long jwtShopId = (jwtShopIdObj instanceof Long) ? (Long) jwtShopIdObj : null;
+
+        if ("VENDOR".equals(jwtRole) && jwtShopId != null) {
+            return helper.findShopById(jwtShopId);
+        }
+
+        // Fallback session như code cũ
         Long uid  = SessionUtil.currentUserId(req);
         String role = SessionUtil.currentRole(req);
         HttpSession ss = req.getSession(false);
@@ -72,7 +88,14 @@ public class VendorOrderServlet extends HttpServlet {
             return;
         }
 
-        Long orderId = Long.valueOf(req.getParameter("orderId"));
+        // Gợi nhớ: chỉ thao tác đơn thuộc shopId đã xác định ở trên
+        Long orderId;
+        try {
+            orderId = Long.valueOf(req.getParameter("orderId"));
+        } catch (Exception e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu hoặc sai orderId");
+            return;
+        }
         String newStatus = req.getParameter("newStatus");
 
         Order o = orderService.findById(orderId);
