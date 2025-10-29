@@ -47,9 +47,9 @@
     </div>
   </div>
 </div>
-	
+
 <!-- FORM LỌC (giữ như /products, nhưng cố định shop) -->
-<form class="row g-2 mb-3" method="get" action="<c:url value='/products'/>"	 id="filterForm">
+<form class="row g-2 mb-3" method="get" action="<c:url value='/vendor'/>" id="filterForm">
   <input type="hidden" name="shopId" value="${shop.shopId}"/>
 
   <div class="col-12 col-md-4">
@@ -85,7 +85,7 @@
   <div class="col-12 col-md-auto d-flex gap-2">
     <button class="btn btn-primary">Lọc</button>
     <a class="btn btn-outline-secondary"
-       href="<c:url value='/products'><c:param name='shopId' value='${shop.shopId}'/></c:url>">
+       href="<c:url value='/vendor'><c:param name='shopId' value='${shop.shopId}'/></c:url>">
       Xóa lọc
     </a>
   </div>

@@ -20,31 +20,15 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 		<class>vn.iotstar.entities.UserOtp</class>
 		<class>vn.iotstar.entities.Coupon</class>
 		<class>vn.iotstar.entities.Promotion</class>
-
-		<!-- ✅ Thêm entity ghi nhận sản phẩm đã xem -->
 		<class>vn.iotstar.entities.ViewedProduct</class>
-
-		<!-- ✅ Thêm entity Yêu thích -->
 		<class>vn.iotstar.entities.Favorite</class>
-
-		<!-- ✅ Đã xem gần đây -->
-		<class>vn.iotstar.entities.ViewedProduct</class>
-
-		<!-- ✅ Yêu thích -->
-		<class>vn.iotstar.entities.Favorite</class>
-
-		<!-- ✅ THÊM MỚI: Bình luận sản phẩm (để Hibernate auto-DDL tạo cột parent_comment_id) -->
 		<class>vn.iotstar.entities.ProductComment</class>
-
-		<!-- KHAI BÁO ENTITY (các class có sẵn + MỚI) -->
-		<class>vn.iotstar.entities.Shop</class>
-		<class>vn.iotstar.entities.Product</class>
-		<class>vn.iotstar.entities.Category</class>
-		<class>vn.iotstar.entities.Order</class>
-
-		<!-- ✅ THÊM MỚI: Voucher -->
 		<class>vn.iotstar.entities.Voucher</class>
 		<class>vn.iotstar.entities.VoucherProduct</class>
+
+		<!-- ✅ THÊM MỚI -->
+		<class>vn.iotstar.entities.ProductVariant</class>
+		<class>vn.iotstar.entities.ShoeAttribute</class>
 
 		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 
@@ -54,8 +38,7 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 			<property name="jakarta.persistence.jdbc.driver"
 				value="com.microsoft.sqlserver.jdbc.SQLServerDriver" />
 			<property name="jakarta.persistence.jdbc.user" value="sa" />
-			<property name="jakarta.persistence.jdbc.password"
-				value="123456" />
+			<property name="jakarta.persistence.jdbc.password" value="123456" />
 			<property name="hibernate.show_sql" value="true" />
 			<property name="hibernate.format_sql" value="true" />
 			<property name="hibernate.hbm2ddl.auto" value="update" />

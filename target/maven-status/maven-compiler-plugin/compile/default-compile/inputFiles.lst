@@ -32,6 +32,9 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\site\Vendo
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\TestCloudinaryServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\user\AddressServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\user\ProfileServlet.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\DeleteVariantServlet.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\ProductVariantServlet.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\ShoeAttributeServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\ShopFeaturedServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorChatServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorDashboardServlet.java
@@ -61,6 +64,8 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\DAO\IPromotionDao.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\DAO\IShopDao.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\DAO\IUserDao.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\DAO\IUserVerificationDao.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\DAO\ProductVariantDAO.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\DAO\ShoeAttributeDAO.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\dto\FavoriteItem.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\Address.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\Cart.java
@@ -76,9 +81,11 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\Product.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\ProductComment.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\ProductImage.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\ProductReview.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\ProductVariant.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\Promotion.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\Shipper.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\ShippingPartner.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\ShoeAttribute.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\Shop.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\ShopFeaturedImage.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\entities\User.java
@@ -98,6 +105,7 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\admin\AdminSh
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\admin\UserService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\AuthService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\CategoryService.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\CloudinaryService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\CommentService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\FavoriteService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\MailService.java
@@ -106,7 +114,9 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\OtpService.ja
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductBrowseService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductImageService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductService.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductVariantService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ReviewService.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ShoeAttributeService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ShopFeaturedService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ShopService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\StaffService.java

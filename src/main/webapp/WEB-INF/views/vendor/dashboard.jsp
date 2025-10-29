@@ -38,11 +38,11 @@
 		<c:if test="${not empty shop and not empty shop.shopId}">
 			<a href="${ctx}/chat?shopId=${shop.shopId}"
 				class="btn btn-outline-primary">💬 Chat nội bộ</a>
-			<a href="${ctx}/chat/public?shopId=${shop.shopId}" class="btn btn-outline-primary">💬 Chat công khai</a>
-
-
+			<a href="${ctx}/chat/public?shopId=${shop.shopId}"
+				class="btn btn-outline-primary">💬 Chat công khai</a>
 		</c:if>
 	</div>
+
 
 	<!-- KPIs -->
 	<div class="row g-3">
