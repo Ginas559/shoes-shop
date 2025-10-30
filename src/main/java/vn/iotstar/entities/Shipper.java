@@ -20,7 +20,11 @@ public class Shipper {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "partner_id", nullable = false)
+    @JoinColumn(name = "partner_id", nullable = true)
     private ShippingPartner shippingPartner;
+    
+    
+    
+    
 }
 

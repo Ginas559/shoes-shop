@@ -15,10 +15,10 @@ import vn.iotstar.entities.Shop;
 public class OrderDaoImpl implements IOrderDao {
 	
 	@Override
-	public List<Order> searchOrders(OrderStatus status, Shop shop, Category category, int page, int pageSize) {
+	public List<Order> searchOrders(OrderStatus status, Shop shop, int page, int pageSize) {
 		EntityManager em = JPAConfig.getEntityManager();
 		try {
-			String jpql = "SELECT o FROM Order o WHERE 1=1";
+			String jpql = "SELECT o FROM Order o JOIN FETCH o.user JOIN FETCH o.shop WHERE 1=1";
 			
 			if (status != null) {
 				jpql += " AND o.status = :status";
@@ -28,9 +28,7 @@ public class OrderDaoImpl implements IOrderDao {
 				jpql += " AND o.shop = :shop";
 			}
 
-			if (category != null) {
-				jpql += " AND o.category = :category";
-			}
+			
 
 			TypedQuery<Order> query = em.createQuery(jpql, Order.class);
 
@@ -43,9 +41,7 @@ public class OrderDaoImpl implements IOrderDao {
 				query.setParameter("shop", shop);
 			}
 
-			if (category != null) {
-				query.setParameter("category", category);
-			}
+			
 
 			query.setFirstResult((page - 1) * pageSize);
 			query.setMaxResults(pageSize);
@@ -58,10 +54,10 @@ public class OrderDaoImpl implements IOrderDao {
 	}
 	
 	@Override
-	public int countOrders(OrderStatus status, Shop shop, Category category) {
+	public int countOrders(OrderStatus status, Shop shop) {
 		EntityManager em = JPAConfig.getEntityManager();
 		try {
-			String jpql = "SELECT COUNT(o) FROM Order o WHERE 1=1";
+			String jpql = "SELECT COUNT(o) FROM Order o  WHERE 1=1";
 
 			if (status != null) {
 				jpql += " AND o.status = :status";
@@ -70,13 +66,6 @@ public class OrderDaoImpl implements IOrderDao {
 			if (shop != null) {
 				jpql += " AND o.shop = :shop";
 			}
-
-			if (category != null) {
-				jpql += " AND o.category = :category";
-			}
-
-			
-
 			TypedQuery<Long> query = em.createQuery(jpql, Long.class);
 
 			
@@ -89,15 +78,21 @@ public class OrderDaoImpl implements IOrderDao {
 				query.setParameter("shop", shop);
 			}
 
-			if (category != null) {
-				query.setParameter("category", category);
-			}
-			
 
 			return query.getSingleResult().intValue();
 		} finally {
 			em.close();
 		}
+	}
+	
+	@Override
+	public Order findById(Long id) {
+		EntityManager em = JPAConfig.getEntityManager();
+		String jpql = "select o from Order o JOIN FETCH o.user JOIN FETCH o.shop where o.orderId = :id";
+		TypedQuery<Order> query = em.createQuery(jpql, Order.class);
+		
+		query.setParameter("id", id);
+		return query.getSingleResult();
 	}
 
 	

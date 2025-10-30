@@ -77,7 +77,7 @@
 							<th>Customer</th>
 							<th>Total Amount</th>
 							<th>Shop</th>
-							<th>Date</th>
+							
 							<th>Status</th>
 							<th>Actions</th>
 						</tr>
@@ -87,14 +87,12 @@
 							<tr>
 								<td>${status.index + 1 + (currentPage - 1) * pageSize}</td>
 								<td class="fw-semibold">${order.orderId}</td>
-								<td>${order.user.fullName}</td> <%-- Giả sử Order có thuộc tính user --%>
+								<td>${order.user.firstname} ${order.user.lastname}</td> <%-- Giả sử Order có thuộc tính user --%>
 								<td>
 									<fmt:formatNumber value="${order.totalAmount}" type="currency" currencyCode="VND" maxFractionDigits="0"/>
 								</td>
 								<td>${order.shop.shopName}</td> <%-- Giả sử Order có thuộc tính shop --%>
-								<td>
-									<fmt:formatDate value="${order.orderDate}" pattern="dd/MM/yyyy HH:mm"/>
-								</td>
+								
 								<td>
 									<span class="badge bg-secondary px-3 py-2">
 										${order.status}

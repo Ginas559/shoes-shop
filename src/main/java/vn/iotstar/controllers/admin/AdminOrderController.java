@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import vn.iotstar.entities.Category;
 import vn.iotstar.entities.Order;
+import vn.iotstar.entities.OrderItem;
 import vn.iotstar.entities.Order.OrderStatus;
 import vn.iotstar.entities.Shop;
 import vn.iotstar.entities.Shop.ShopStatus;
@@ -28,7 +29,7 @@ import java.util.List;
 /**
  * Servlet Filter implementation class AdminOrderController
  */
-@WebServlet(urlPatterns = { "/admin/orders" })
+@WebServlet(urlPatterns = { "/admin/orders", "/admin/orders/details"})
 public class AdminOrderController extends HttpServlet {
        
 	private static final long serialVersionUID = 1L;
@@ -102,10 +103,10 @@ public class AdminOrderController extends HttpServlet {
 
 	        // Lấy danh sách đơn hàng (có lọc + phân trang)
 	        // Giả định orderService có hàm searchOrders với signature tương tự yêu cầu
-	        List<Order> orders = orderService.searchOrders(status, shopFilter, categoryFilter, currentPage, pageSize);
+	        List<Order> orders = orderService.searchOrders(status, shopFilter, currentPage, pageSize);
 	        
 	        // Lấy tổng số đơn hàng (để tính tổng số trang)
-	        int totalOrders = orderService.countOrders(status, shopFilter, categoryFilter);
+	        int totalOrders = orderService.countOrders(status, shopFilter);
 	        int totalPages = (int) Math.ceil((double) totalOrders / pageSize);
 	        
 	        // Lấy danh sách Shops và Categories (để đổ vào bộ lọc trên JSP)
@@ -131,5 +132,52 @@ public class AdminOrderController extends HttpServlet {
 	    }
 	    
 	    // ... Xử lý các yêu cầu khác nếu có ...
+	 // Giả định: Bạn đang ở trong Controller/Servlet hoặc Filter có quyền truy cập vào HttpServletRequest
+	 // String url = request.getRequestURI() + "?" + request.getQueryString(); 
+	 // HOẶC: String url = request.getRequestURI();
+
+	 // 1. Kiểm tra URL (Chỉ kiểm tra đường dẫn cơ sở, tham số ID sẽ lấy riêng)
+	 if (url.endsWith("/admin/orders/details")) {
+	     
+	     // 2. Lấy ID từ tham số query
+	     String orderIdParam = request.getParameter("id");
+	     
+	     // 3. Kiểm tra xem ID có tồn tại không
+	     if (orderIdParam != null && !orderIdParam.isEmpty()) {
+	         try {
+	             // Chuyển đổi ID sang kiểu Long
+	             Long orderId = Long.parseLong(orderIdParam);
+	             
+	             // Khởi tạo OrderService (Giả định bạn có thể lấy nó từ IoC Container hoặc tự tạo)
+	             
+	             
+	             // 4. Tìm đơn hàng
+	             Order order = orderService.findById(orderId);
+	             List<OrderItem> items = orderService.getOrderItemsForDetail(orderId);
+	             request.setAttribute("items", items);
+	             
+	             // 5. Kiểm tra và chuyển hướng
+	             if (order != null) {
+	                 // Đặt đối tượng Order vào request để hiển thị trên JSP
+	                 request.setAttribute("orderDetail", order);
+	                 
+	                 // Chuyển hướng đến trang chi tiết order
+	                 request.getRequestDispatcher("/WEB-INF/views/admin/orders/order-detail.jsp").forward(request, response);
+	                 
+	             } else {
+	                 // Xử lý trường hợp không tìm thấy đơn hàng (ví dụ: hiển thị trang lỗi 404)
+	                 response.sendError(HttpServletResponse.SC_NOT_FOUND, "Không tìm thấy đơn hàng với ID: " + orderId);
+	             }
+	             
+	         } catch (NumberFormatException e) {
+	             // Xử lý trường hợp ID không phải là số hợp lệ
+	             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID đơn hàng không hợp lệ.");
+	         }
+	     } else {
+	         // Xử lý trường hợp URL là /admin/orders (không có ID), 
+	         // có thể chuyển sang trang danh sách (list) nếu bạn chưa xử lý ở nơi khác.
+	         // request.getRequestDispatcher("/WEB-INF/views/admin/orders/list.jsp").forward(request, response);
+	     }
+	 }
 	}
 }

@@ -121,7 +121,7 @@
             <li><a href="${pageContext.request.contextPath}/admin/promotions"><i class="fas fa-bullhorn me-2"></i> Promotions</a></li>
             <li><a href="${pageContext.request.contextPath}/admin/orders"><i class="fas fa-shopping-cart me-2"></i> Orders</a></li>
             <li><a href="${pageContext.request.contextPath}/admin/shops"><i class="fas fa-store me-2"></i> Shops</a></li>
-            <li><a href="${pageContext.request.contextPath}/admin/shipper"><i class="fas fa-truck me-2"></i> Shippers</a></li>
+            <li><a href="${pageContext.request.contextPath}/admin/shippers"><i class="fas fa-truck me-2"></i> Shippers</a></li>
         </ul>
 
         <div class="text-center mb-3">

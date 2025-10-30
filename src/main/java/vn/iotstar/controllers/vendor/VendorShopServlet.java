@@ -62,7 +62,7 @@ public class VendorShopServlet extends HttpServlet {
     EntityTransaction tx = em.getTransaction();
 
     try {
-      User vendorRef = em.getReference(User.class, uid);
+      User vendorRef = em.getReference(User.class, uid); 
       Shop shop = em.createQuery(
               "SELECT s FROM Shop s WHERE s.vendor = :vendor", Shop.class)
           .setParameter("vendor", vendorRef)

@@ -89,6 +89,7 @@
 							<th>Price</th>
 							<th>Stock</th>
 							<th>Status</th>
+							
 							<th>Actions</th>
 						</tr>
 					</thead>
