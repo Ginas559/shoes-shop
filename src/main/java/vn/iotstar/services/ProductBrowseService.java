@@ -3,10 +3,12 @@ package vn.iotstar.services;
 import vn.iotstar.configs.JPAConfig;
 import vn.iotstar.entities.Product;
 import vn.iotstar.entities.Category;
+import vn.iotstar.services.ReviewService; // <-- NEW
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.List;
 
 public class ProductBrowseService {
 
@@ -227,5 +229,27 @@ public class ProductBrowseService {
                 .setParameter("p", p)
                 .getResultList();
         } finally { em.close(); }
+    }
+
+    /* ================== REVIEW INTEGRATION (NEW) ================== */
+
+    /** Thống kê review cho trang chi tiết: avg & count */
+    public ReviewService.Stats reviewStats(Long productId) {
+        return new ReviewService().stats(productId);
+    }
+
+    /** Danh sách review mới nhất (giới hạn số lượng để hiển thị) */
+    public List<ReviewService.ReviewItem> reviews(Long productId, Integer limit) {
+        return new ReviewService().list(productId, limit);
+    }
+
+    /** Review của chính user (để hiển thị form sửa) */
+    public ReviewService.ReviewItem userReview(Long productId, Long userId) {
+        return new ReviewService().findByUser(productId, userId);
+    }
+
+    /** User có được phép review (đã mua hàng)? */
+    public boolean canReview(Long productId, Long userId) {
+        return new ReviewService().canReview(productId, userId);
     }
 }

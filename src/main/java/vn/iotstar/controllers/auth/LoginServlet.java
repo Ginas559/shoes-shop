@@ -45,10 +45,15 @@ public class LoginServlet extends HttpServlet {
             User u = authService.login(email, password); // ném IllegalStateException khi lỗi
 
             HttpSession session = req.getSession(true);
-            session.setAttribute("currentUser", u);
-            session.setAttribute("userId", u.getId());
+
+            // --- 🟢 Đồng nhất key session trên toàn hệ thống ---
+            session.setAttribute("authUser", u);        // tên chuẩn để các servlet khác dùng
+            session.setAttribute("currentUser", u);     // giữ nguyên key cũ để không lỗi chỗ khác
+            session.setAttribute("user", u);            // bổ sung cho JSP hoặc filter dùng key "user"
+            session.setAttribute("userId", u.getId());  // key số nguyên dùng ở OrderServlet
             session.setAttribute("email", u.getEmail());
             session.setAttribute("role", u.getRole().name()); // USER | ADMIN | VENDOR | SHIPPER
+            // ---------------------------------------------------
 
             // ⭐ Thêm hỗ trợ STAFF (USER thuộc 1 shop)
             if (u.getStaffShop() != null) {
@@ -67,7 +72,6 @@ public class LoginServlet extends HttpServlet {
             req.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(req, resp);
         }
     }
-
 
     private void redirectByRole(HttpServletResponse resp, String ctx, String role) throws IOException {
         if ("ADMIN".equalsIgnoreCase(role)) {

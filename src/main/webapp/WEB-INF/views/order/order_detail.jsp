@@ -170,6 +170,15 @@
                         <a class="text-decoration-none" href="${ctx}/product/${it.product.productId}">
                           <c:out value="${it.product.productName}"/>
                         </a>
+                        <!-- Nút Đánh giá khi đơn đã giao/hoàn -->
+                        <c:if test="${order.status=='DELIVERED' || order.status=='RETURNED'}">
+                          <div class="mt-1">
+                            <a class="btn btn-sm btn-primary"
+                               href="${ctx}/product/${it.product.productId}?from=order#reviews">
+                              Đánh giá sản phẩm
+                            </a>
+                          </div>
+                        </c:if>
                       </td>
                       <td class="text-end">
                         <fmt:formatNumber value="${it.price}" type="currency" currencySymbol="₫"/>
