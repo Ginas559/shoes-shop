@@ -200,12 +200,35 @@
 				<c:if test="${not empty product.shop}">
 					<div class="d-flex align-items-center gap-2 mb-2">
 						<c:if test="${not empty product.shop.logoUrl}">
-							<img src="${ctx}${product.shop.logoUrl}"
+							<%-- Resolve logo theo rule: http(s) -> giữ nguyên; /assets -> ctx+; / -> giữ; còn lại -> prefix về /assets/img/shops/ --%>
+							<c:set var="logoRaw" value="${product.shop.logoUrl}" />
+							<c:set var="logoFixed"
+								value="${fn:replace(logoRaw, '/assset/', '/assets/')}" />
+							<c:choose>
+								<c:when
+									test="${fn:startsWith(logoFixed,'http://') or fn:startsWith(logoFixed,'https://')}">
+									<c:set var="resolvedLogo" value="${logoFixed}" />
+								</c:when>
+								<c:when test="${fn:startsWith(logoFixed,'/assets/')}">
+									<c:set var="resolvedLogo" value="${ctx.concat(logoFixed)}" />
+								</c:when>
+								<c:when test="${fn:startsWith(logoFixed,'/')}">
+									<c:set var="resolvedLogo" value="${logoFixed}" />
+								</c:when>
+								<c:otherwise>
+									<c:set var="resolvedLogo"
+										value="${ctx.concat('/assets/img/shops/').concat(logoFixed)}" />
+								</c:otherwise>
+							</c:choose>
+
+							<img
+								src="${empty resolvedLogo ? (ctx.concat('/assets/img/placeholder.png')) : resolvedLogo}"
 								alt="<c:out value='${product.shop.shopName}'/>"
 								class="rounded border"
 								style="width: 172px; height: 172px; object-fit: cover"
 								onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
 						</c:if>
+
 
 						<div>
 							<div class="small text-muted">Của shop</div>
@@ -265,15 +288,84 @@
 					<c:out value="${product.description}" />
 				</p>
 
+				<c:if test="${not empty attrs}">
+					<div class="mt-3 border rounded p-3">
+						<div class="fw-semibold mb-2">Thuộc tính sản phẩm</div>
+						<div class="row g-2 small">
+							<c:if test="${not empty attrs.brand}">
+								<div class="col-6 col-md-3">
+									<span class="text-muted">Thương hiệu:</span> <strong><c:out
+											value="${attrs.brand}" /></strong>
+								</div>
+							</c:if>
+							<c:if test="${not empty attrs.material}">
+								<div class="col-6 col-md-3">
+									<span class="text-muted">Chất liệu:</span> <strong><c:out
+											value="${attrs.material}" /></strong>
+								</div>
+							</c:if>
+							<c:if test="${not empty attrs.gender}">
+								<div class="col-6 col-md-3">
+									<span class="text-muted">Giới tính:</span> <strong><c:out
+											value="${attrs.gender}" /></strong>
+								</div>
+							</c:if>
+							<c:if test="${not empty attrs.style}">
+								<div class="col-6 col-md-3">
+									<span class="text-muted">Kiểu dáng:</span> <strong><c:out
+											value="${attrs.style}" /></strong>
+								</div>
+							</c:if>
+						</div>
+					</div>
+				</c:if>
+
+				<div class="mt-3 border rounded p-3">
+					<div class="fw-semibold mb-2">Chọn biến thể</div>
+
+					<div class="mb-2">
+						<div class="text-muted small mb-1">Màu sắc</div>
+						<div id="colorGroup" class="d-flex flex-wrap gap-2">
+							<c:if test="${not empty colorGroups}">
+								<c:forEach var="entry" items="${colorGroups}">
+									<c:set var="color" value="${entry.key}" />
+									<label class="btn btn-outline-secondary btn-sm"> <input
+										type="radio" name="chooseColor" class="d-none"
+										value="${color}"> <span>${color}</span>
+									</label>
+								</c:forEach>
+							</c:if>
+							<c:if test="${empty colorGroups}">
+								<span class="text-muted small">Sản phẩm này không có biến
+									thể màu/size.</span>
+							</c:if>
+						</div>
+					</div>
+
+					<div class="mb-2">
+						<div class="text-muted small mb-1">Kích cỡ</div>
+						<div id="sizeGroup" class="d-flex flex-wrap gap-2"></div>
+					</div>
+
+					<div class="small">
+						<span id="stockText" class="text-muted">Vui lòng chọn màu
+							và size.</span>
+					</div>
+				</div>
+
 				<div class="mt-3">
 					<form id="addToCartForm" method="post" action="${ctx}/cart/add"
-						class="d-flex align-items-center gap-2">
+						class="d-flex flex-column gap-2" autocomplete="off">
 						<input type="hidden" name="productId" value="${product.productId}" />
-						<div class="input-group" style="width: 220px;">
-							<input type="number" name="quantity" value="1" min="1"
-								class="form-control" />
-							<button type="submit" class="btn btn-primary">Thêm vào
-								giỏ</button>
+						<input type="hidden" name="variantId" id="variantId" value="" />
+
+						<div class="d-flex align-items-center gap-2">
+							<div class="input-group" style="width: 260px;">
+								<input type="number" id="qtyInput" name="quantity" value="1"
+									min="1" class="form-control" />
+								<button id="btnAddCart" type="submit" class="btn btn-primary"
+									disabled>Thêm vào giỏ</button>
+							</div>
 						</div>
 					</form>
 
@@ -281,6 +373,7 @@
 						class="text-decoration-none" href="${ctx}/cart">${ctx}/cart</a>.
 					</small>
 				</div>
+				<%-- // Thẻ đóng div.col-12.col-md-6 --%>
 
 				<div class="mt-3 d-flex gap-2">
 					<a class="btn btn-outline-secondary" href="${ctx}/products">←
@@ -288,7 +381,9 @@
 						href="${ctx}/product/${product.productId}">Tải lại</a>
 				</div>
 			</div>
+			<%-- Thẻ đóng div.col-12.col-md-6 --%>
 		</div>
+		<%-- Thẻ đóng div.row.g-3.product-detail --%>
 
 		<c:if test="${not empty relatedProducts}">
 			<h2 class="h6 mt-4 mb-2">Sản phẩm liên quan</h2>
@@ -591,3 +686,182 @@
 		</div>
 	</div>
 </div>
+
+<script>
+(function(){
+  // colorGroups: map color -> list sizes
+  var COLOR_GROUPS = {};
+  <c:forEach var="e" items="${colorGroups}">
+    COLOR_GROUPS["${fn:escapeXml(e.key)}"] = [
+      <c:forEach var="sz" items="${e.value}" varStatus="st">"${fn:escapeXml(sz)}"${st.last ? "" : ","}</c:forEach>
+    ];
+  </c:forEach>
+
+  // variantIdByKey: "color|size" -> id
+  var VARIANT_ID = {};
+  <c:forEach var="it" items="${variantIdByKey}">
+    VARIANT_ID["${fn:escapeXml(it.key)}"] = ${it.value};
+  </c:forEach>
+
+  // variantStock: "color|size" -> stock
+  var VARIANT_STOCK = {};
+  <c:forEach var="it" items="${variantStock}">
+    VARIANT_STOCK["${fn:escapeXml(it.key)}"] = ${it.value};
+  </c:forEach>
+
+  // image map theo biến thể: cố gắng lấy từ list variants (nếu có)
+  var VARIANT_IMG = {};
+  <c:if test="${not empty variants}">
+    <c:forEach var="v" items="${variants}">
+      <c:if test="${not empty v.imageUrl}">
+        VARIANT_IMG["${fn:escapeXml(v.color)}|${fn:escapeXml(v.size)}"] = "${fn:escapeXml(v.imageUrl)}";
+      </c:if>
+    </c:forEach>
+  </c:if>
+
+  var colorGroupEl = document.getElementById('colorGroup');
+  var sizeGroupEl  = document.getElementById('sizeGroup');
+  var stockTextEl  = document.getElementById('stockText');
+  var variantIdEl  = document.getElementById('variantId');
+  var qtyInput     = document.getElementById('qtyInput');
+  var btnAdd       = document.getElementById('btnAddCart');
+  var mainImg      = document.getElementById('mainImage');
+  var originalMainImgSrc = mainImg ? mainImg.src : null; // Lưu lại ảnh gốc
+
+  var chosen = { color: null, size: null };
+
+  function renderSizes(color) {
+    // Reset trạng thái
+    sizeGroupEl.innerHTML = '';
+    chosen.size = null;
+    
+    if (!color || !COLOR_GROUPS[color] || COLOR_GROUPS[color].length === 0) {
+      stockTextEl.textContent = 'Vui lòng chọn màu.';
+      updateState();
+      return;
+    }
+    
+    // Render các nút chọn size
+    COLOR_GROUPS[color].forEach(function(sz){
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-outline-secondary btn-sm';
+      btn.textContent = sz;
+      btn.addEventListener('click', function(){
+        chosen.size = sz;
+        updateState();
+        highlightSize(sz);
+      });
+      sizeGroupEl.appendChild(btn);
+    });
+  }
+
+  function highlightColor(color) {
+    Array.from(colorGroupEl.querySelectorAll('label')).forEach(function(lb){
+      var inp = lb.querySelector('input[type="radio"]');
+      if (inp && inp.value === color) lb.classList.add('active'); else lb.classList.remove('active');
+    });
+  }
+  
+  function highlightSize(size) {
+    Array.from(sizeGroupEl.querySelectorAll('button')).forEach(function(b){
+      if (b.textContent === size) b.classList.add('btn-primary'), b.classList.remove('btn-outline-secondary');
+      else b.classList.add('btn-outline-secondary'), b.classList.remove('btn-primary');
+    });
+  }
+
+  function updateMainImageIfAny(color, size) {
+    if (!mainImg) return;
+    
+    var key = (color || '') + '|' + (size || '');
+    var url = VARIANT_IMG[key];
+    
+    if (url) {
+      // Logic resolve path tương tự server
+      // Thay thế /assset/ thành /assets/
+      url = url.replace('/assset/', '/assets/');
+      
+      // Nếu là relative path, thêm context path + default folder
+      if (!/^https?:\/\//.test(url) && !url.startsWith('/')) {
+        url = '${ctx}/assets/img/products/' + url;
+      } else if (url.startsWith('/')) {
+         // Nếu là root path, đảm bảo context path (nếu cần)
+         if (!url.startsWith('${ctx}')) url = '${ctx}' + url;
+      }
+      mainImg.src = url;
+    } else {
+      // Không có ảnh biến thể -> trở về ảnh chính (đã được lưu khi load)
+      mainImg.src = originalMainImgSrc;
+    }
+  }
+
+  function updateState() {
+    var key = (chosen.color || '') + '|' + (chosen.size || '');
+    var st  = VARIANT_STOCK[key] || 0;
+    var vid = VARIANT_ID[key];
+
+    // Cập nhật text trạng thái
+    if (chosen.color && !chosen.size) {
+      stockTextEl.textContent = 'Đã chọn màu ' + chosen.color + '. Hãy chọn size.';
+    } else if (chosen.color && chosen.size) {
+      stockTextEl.textContent = 'Còn ' + st + ' sản phẩm.';
+    } else {
+      stockTextEl.textContent = 'Vui lòng chọn màu và size.';
+    }
+
+    // Cập nhật ID biến thể và trạng thái nút Thêm vào giỏ
+    if (vid) {
+      variantIdEl.value = String(vid);
+      btnAdd.removeAttribute('disabled');
+      // Thêm kiểm tra tồn kho: nếu stock = 0
+      if (st <= 0) {
+        btnAdd.setAttribute('disabled', 'disabled');
+        stockTextEl.textContent = 'HẾT HÀNG! Biến thể này tạm hết hàng.';
+      }
+    } else {
+      variantIdEl.value = '';
+      btnAdd.setAttribute('disabled', 'disabled');
+    }
+
+    // Giới hạn qty (min=1, max=stock)
+    var maxQty = Math.max(1, st);
+    qtyInput.min = 1;
+    qtyInput.max = maxQty;
+    if (+qtyInput.value > maxQty) qtyInput.value = maxQty;
+    if (+qtyInput.value < 1) qtyInput.value = 1; // fix nếu nhập 0 hoặc âm
+
+    // Ảnh theo biến thể (nếu có)
+    updateMainImageIfAny(chosen.color, chosen.size);
+  }
+
+  // Bind chọn color
+  Array.from(colorGroupEl.querySelectorAll('input[name="chooseColor"]')).forEach(function(inp){
+    inp.addEventListener('change', function(){
+      chosen.color = inp.value;
+      chosen.size = null; // reset size khi đổi màu
+      renderSizes(chosen.color);
+      highlightColor(chosen.color);
+      updateState();
+    });
+  });
+
+  // Nếu không có biến thể: Bỏ disabled nút Thêm vào giỏ
+  var isNoVariant = (Object.keys(COLOR_GROUPS).length === 0);
+  if (isNoVariant) {
+    btnAdd.removeAttribute('disabled');
+    variantIdEl.value = '';
+    stockTextEl.textContent = 'Sản phẩm không có biến thể; có thể đặt như bình thường.';
+    // Đồng thời ẩn box chọn biến thể nếu không có
+    var variantBox = colorGroupEl.closest('.mt-3.border.rounded.p-3');
+    if (variantBox) variantBox.style.display = 'none';
+  } else {
+    // Nếu có biến thể, tự động chọn màu đầu tiên để hiển thị size
+    var firstColor = colorGroupEl.querySelector('input[name="chooseColor"]');
+    if (firstColor) {
+      firstColor.checked = true;
+      firstColor.dispatchEvent(new Event('change'));
+    }
+  }
+
+})();
+</script>

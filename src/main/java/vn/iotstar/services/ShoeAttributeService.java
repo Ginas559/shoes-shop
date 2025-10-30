@@ -1,4 +1,3 @@
-// filepath: src/main/java/vn/iotstar/services/ShoeAttributeService.java
 package vn.iotstar.services;
 
 import vn.iotstar.DAO.ShoeAttributeDAO;
@@ -9,11 +8,10 @@ public class ShoeAttributeService {
 
     private final ShoeAttributeDAO dao = new ShoeAttributeDAO();
 
-    public ShoeAttribute findByProduct(Product product) {
-        return dao.findByProduct(product);
-    }
+    public ShoeAttribute findByProduct(Product product) { return dao.findByProduct(product); }
 
-    public void saveOrUpdate(ShoeAttribute attr) {
-        dao.saveOrUpdate(attr);
-    }
+    // NEW
+    public ShoeAttribute findByProductId(Long productId) { return dao.findByProductId(productId); }
+
+    public void saveOrUpdate(ShoeAttribute attr) { dao.saveOrUpdate(attr); }
 }

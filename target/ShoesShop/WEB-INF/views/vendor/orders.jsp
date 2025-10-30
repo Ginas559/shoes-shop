@@ -8,35 +8,32 @@
 <main class="container py-4">
   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
     <h2 class="mb-0">Đơn hàng của shop</h2>
-    <div>
-      <a class="btn btn-outline-secondary btn-sm" href="${pageContext.request.contextPath}/vendor/dashboard">← Về Dashboard</a>
-    </div>
+    <a class="btn btn-outline-secondary btn-sm" href="${pageContext.request.contextPath}/vendor/dashboard">← Về Dashboard</a>
   </div>
 
-  <!-- (Optional) Quick stats theo trạng thái: chỉ hiển thị nếu controller set sẵn 'statusCounts' -->
-  <c:if test="${not empty statusCounts}">
-    <div class="d-flex flex-wrap gap-2 mb-3">
-      <c:forEach var="e" items="${statusCounts}">
-        <span class="badge bg-light text-dark border">
-          <strong>${e.key}</strong>: ${e.value}
-        </span>
-      </c:forEach>
-    </div>
-  </c:if>
-
-  <!-- Filter trạng thái -->
+  <!-- Filter trạng thái + tìm theo tên/email + page size -->
   <form class="row g-2 mb-3" method="get" action="${pageContext.request.contextPath}/vendor/orders">
-    <div class="col-auto">
-      <label class="visually-hidden">Trạng thái</label>
+    <div class="col-md-3">
+      <input class="form-control" name="q" placeholder="Tìm khách (tên/email)..." value="${q}"/>
+    </div>
+    <div class="col-md-3">
       <select name="status" class="form-select">
         <option value="">-- Tất cả trạng thái --</option>
         <c:forEach var="st" items="${fn:split(statuses, ',')}">
-          <option value="${st}" <c:if test="${st eq status}">selected="selected"</c:if>>${st}</option>
+          <option value="${st}" <c:if test="${st eq status}">selected</c:if>>${st}</option>
         </c:forEach>
       </select>
     </div>
-    <div class="col-auto">
-      <button class="btn btn-primary" type="submit">Lọc</button>
+    <div class="col-md-2">
+      <select name="size" class="form-select">
+        <c:set var="sz" value="${size!=null?size:20}"/>
+        <option value="10"  ${sz==10 ? 'selected':''}>10 / trang</option>
+        <option value="20"  ${sz==20 ? 'selected':''}>20 / trang</option>
+        <option value="50"  ${sz==50 ? 'selected':''}>50 / trang</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-primary w-100">Lọc</button>
     </div>
   </form>
 
@@ -67,7 +64,7 @@
                   <input type="hidden" name="orderId" value="${o.orderId}"/>
                   <select name="newStatus" class="form-select form-select-sm">
                     <c:forEach var="st" items="${fn:split(statuses, ',')}">
-                      <option value="${st}" <c:if test="${st eq o.status.name()}">selected="selected"</c:if>>${st}</option>
+                      <option value="${st}" <c:if test="${st eq o.status.name()}">selected</c:if>>${st}</option>
                     </c:forEach>
                   </select>
                   <button class="btn btn-sm btn-primary" type="submit">Lưu</button>
@@ -81,6 +78,44 @@
           </tbody>
         </table>
       </div>
+
+      <!-- NEW: pagination -->
+      <c:if test="${totalPages > 1}">
+        <nav>
+          <ul class="pagination">
+            <c:set var="cur" value="${page}" />
+            <li class="page-item ${cur<=1?'disabled':''}">
+              <a class="page-link"
+                 href="<c:url value='/vendor/orders'>
+                          <c:param name='page' value='${cur-1}'/>
+                          <c:param name='size' value='${size}'/>
+                          <c:if test='${not empty q}'><c:param name='q' value='${q}'/></c:if>
+                          <c:if test='${not empty status}'><c:param name='status' value='${status}'/></c:if>
+                        </c:url>">Prev</a>
+            </li>
+            <c:forEach var="i" begin="1" end="${totalPages}">
+              <li class="page-item ${i==cur?'active':''}">
+                <a class="page-link"
+                   href="<c:url value='/vendor/orders'>
+                            <c:param name='page' value='${i}'/>
+                            <c:param name='size' value='${size}'/>
+                            <c:if test='${not empty q}'><c:param name='q' value='${q}'/></c:if>
+                            <c:if test='${not empty status}'><c:param name='status' value='${status}'/></c:if>
+                         </c:url>">${i}</a>
+              </li>
+            </c:forEach>
+            <li class="page-item ${cur>=totalPages?'disabled':''}">
+              <a class="page-link"
+                 href="<c:url value='/vendor/orders'>
+                          <c:param name='page' value='${cur+1}'/>
+                          <c:param name='size' value='${size}'/>
+                          <c:if test='${not empty q}'><c:param name='q' value='${q}'/></c:if>
+                          <c:if test='${not empty status}'><c:param name='status' value='${status}'/></c:if>
+                        </c:url>">Next</a>
+            </li>
+          </ul>
+        </nav>
+      </c:if>
     </div>
   </div>
 </main>

@@ -54,10 +54,11 @@ public class ShopCatalogServlet extends HttpServlet {
         BigDecimal maxPrice = parseBD(req.getParameter("maxPrice"));
         Integer minRating = parseIntObj(req.getParameter("minRating"));
         
-        //tung NEW: attr filters
+        // ĐỌC CÁC THAM SỐ LỌC THUỘC TÍNH
         String brand  = trimToNull(req.getParameter("brand"));
         String gender = trimToNull(req.getParameter("gender"));
         String style  = trimToNull(req.getParameter("style"));
+        String province= trimToNull(req.getParameter("province")); // NEW: Tham số tỉnh/thành
 
         // --- Gọi ProductBrowseService.page(...) có shopId để đồng bộ với /products ---
         var pageResult = browseSvc.page(
@@ -67,7 +68,8 @@ public class ShopCatalogServlet extends HttpServlet {
                 maxPrice,            // maxPrice
                 minRating,           // minRating
                 shopId,              // shopId (lọc theo shop)
-                brand, gender, style,     // tung NEW: filters
+                brand, gender, style,     // filters
+                province,            // NEW: Truyền province (đã được thêm vào ProductBrowseService)
                 sort,                // sort
                 page, size           // page, size
         );
@@ -91,6 +93,7 @@ public class ShopCatalogServlet extends HttpServlet {
         req.setAttribute("brand", brand);
         req.setAttribute("gender", gender);
         req.setAttribute("style", style);
+        req.setAttribute("province", province);           // NEW: Giữ province
         req.setAttribute("minPrice", req.getParameter("minPrice"));
         req.setAttribute("maxPrice", req.getParameter("maxPrice"));
         req.setAttribute("minRating", req.getParameter("minRating"));

@@ -89,17 +89,18 @@ public class ProductBrowseService {
         public boolean isHasNext() { return number < totalPages; }
     }
 
-    // Giữ API cũ (không shopId, không attr filter)
+    // Giữ API cũ (không shopId, không attr filter) -> GỌI OVERLOAD MỚI
     public PageResult<ItemVM> page(
             String q, Long catId,
             BigDecimal minPrice, BigDecimal maxPrice,
             Integer minRating,
             String sort, int page, int size
     ){
-        return page(q, catId, minPrice, maxPrice, minRating, null, null, null, null, sort, page, size);
+        // Thêm null cho shopId, brand, gender, style, và province (NEW)
+        return page(q, catId, minPrice, maxPrice, minRating, null, null, null, null, null, sort, page, size);
     }
 
-    // Giữ API cũ (có shopId, chưa attr filter) — gọi overload mới với null
+    // Giữ API cũ (có shopId, chưa attr filter) -> GỌI OVERLOAD MỚI
     public PageResult<ItemVM> page(
             String q, Long catId,
             BigDecimal minPrice, BigDecimal maxPrice,
@@ -107,16 +108,18 @@ public class ProductBrowseService {
             Long shopId,
             String sort, int page, int size
     ){
-        return page(q, catId, minPrice, maxPrice, minRating, shopId, null, null, null, sort, page, size);
+        // Thêm null cho brand, gender, style, và province (NEW)
+        return page(q, catId, minPrice, maxPrice, minRating, shopId, null, null, null, null, sort, page, size);
     }
 
-    // ==== API MỚI: có filter brand/gender/style ====
+    // ==== API MỚI NHẤT: có filter brand/gender/style/province ====
     public PageResult<ItemVM> page(
             String q, Long catId,
             BigDecimal minPrice, BigDecimal maxPrice,
             Integer minRating,
             Long shopId,
             String brand, String gender, String style,
+            String province, // NEW: Tham số tỉnh/thành
             String sort, int page, int size
     ){
         EntityManager em = JPAConfig.getEntityManager();
@@ -137,7 +140,7 @@ public class ProductBrowseService {
             }
             if (shopId != null) { where.append(" AND s.shopId = :shopId "); p.put("shopId", shopId); }
 
-            // FILTER theo ShoeAttribute bằng EXISTS để không phụ thuộc mapping field
+            // Lọc theo thuộc tính sản phẩm (ShoeAttribute)
             if (brand != null && !brand.isBlank()) {
                 where.append(" AND EXISTS (SELECT 1 FROM ShoeAttribute sa WHERE sa.product = p AND LOWER(sa.brand) = :brand) ");
                 p.put("brand", brand.toLowerCase());
@@ -149,6 +152,13 @@ public class ProductBrowseService {
             if (style != null && !style.isBlank()) {
                 where.append(" AND EXISTS (SELECT 1 FROM ShoeAttribute sa3 WHERE sa3.product = p AND LOWER(sa3.style) = :style) ");
                 p.put("style", style.toLowerCase());
+            }
+            
+            // NEW: lọc theo tỉnh/thành của Shop
+            if (province != null && !province.isBlank()) {
+                // Chú ý: s.province là trường của Shop
+                where.append(" AND (s.province IS NOT NULL AND LOWER(s.province) = :prov) ");
+                p.put("prov", province.toLowerCase());
             }
 
             String order = switch (sort == null ? "" : sort) {

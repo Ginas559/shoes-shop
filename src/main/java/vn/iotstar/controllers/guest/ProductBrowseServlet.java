@@ -44,6 +44,13 @@ public class ProductBrowseServlet extends HttpServlet {
 
         Long shopId = parseLongObj(req.getParameter("shopId"));
 
+        // Lấy các tham số filter từ request
+        String brand    = req.getParameter("brand");
+        String gender   = req.getParameter("gender");
+        String style    = req.getParameter("style");
+        String province = req.getParameter("province");   // NEW: Tham số tỉnh/thành
+
+        // Gọi API page mới (có 4 tham số filter thuộc tính)
         var result = svc.page(
                 req.getParameter("q"),
                 parseLongObj(req.getParameter("catId")),
@@ -51,6 +58,8 @@ public class ProductBrowseServlet extends HttpServlet {
                 parseBD(req.getParameter("maxPrice")),
                 parseIntObj(req.getParameter("minRating")),
                 shopId,
+                brand, gender, style,
+                province,                                  // NEW: Truyền province vào Service
                 req.getParameter("sort"),
                 page, size
         );
@@ -62,9 +71,16 @@ public class ProductBrowseServlet extends HttpServlet {
         req.setAttribute("pageTitle", "Sản phẩm");
         req.setAttribute("page", result);
         req.setAttribute("categories", cats);
+        
+        // Gắn lại các tham số filter vào request để giữ trạng thái trên form/link
         req.setAttribute("shopId", shopId);
         req.setAttribute("shops", shops);
         req.setAttribute("shopQ", shopQ);
+        
+        req.setAttribute("brand", brand);
+        req.setAttribute("gender", gender);
+        req.setAttribute("style", style);
+        req.setAttribute("province", province);           // NEW: Gắn province
 
         req.getRequestDispatcher("/WEB-INF/views/products/list.jsp").forward(req, resp);
     }
@@ -177,6 +193,55 @@ public class ProductBrowseServlet extends HttpServlet {
             loadReviewsAndComments(req, p.getProductId(), extractUserIdFromSession(req.getSession(false)));
         }
         // ====== [END VIEWED HOOK + LOG] ======
+
+
+        // ====== [VARIANT & ATTRIBUTES HOOK] ======
+        try {
+            // Khai báo full package name vì chưa import
+            vn.iotstar.services.ProductVariantService varSvc = new vn.iotstar.services.ProductVariantService();
+            vn.iotstar.services.ShoeAttributeService attrSvc = new vn.iotstar.services.ShoeAttributeService();
+
+            Long pid = p.getProductId();
+
+            // 1) Danh sách biến thể
+            java.util.List<vn.iotstar.entities.ProductVariant> variants = varSvc.findByProductId(pid);
+            req.setAttribute("variants", variants);
+
+            // 2) colorGroups: color -> list<size>
+            java.util.Map<String, java.util.List<String>> colorGroups = varSvc.colorToSizes(pid);
+            req.setAttribute("colorGroups", colorGroups);
+
+            // 3) variantStock & variantIdByKey
+            java.util.Map<String, Integer> variantStock = new java.util.HashMap<>();
+            java.util.Map<String, Long> variantIdByKey = varSvc.mapVariantIdByKey(pid);
+            for (java.util.Map.Entry<String, Long> e : variantIdByKey.entrySet()) {
+                String key = e.getKey(); // "color|size"
+                String[] parts = key.split("\\|", -1);
+                String color = parts.length > 0 ? parts[0] : "";
+                String size  = parts.length > 1 ? parts[1] : "";
+                // Gọi stockOf với color và size đã tách
+                Integer st = varSvc.stockOf(pid, color, size);
+                variantStock.put(key, st != null ? st : 0);
+            }
+            req.setAttribute("variantStock", variantStock);
+            req.setAttribute("variantIdByKey", variantIdByKey);
+
+            // 4) Thuộc tính sản phẩm (brand/material/gender/style)
+            // Đảm bảo entity ShoeAttribute đã được định nghĩa
+            vn.iotstar.entities.ShoeAttribute attrs = attrSvc.findByProductId(pid);
+            req.setAttribute("attrs", attrs);
+
+        } catch (Exception ex) {
+            System.out.println("[Variant] ERROR — " + ex.getMessage());
+            // đặt default an toàn nếu cần
+            req.setAttribute("variants", new java.util.ArrayList<>());
+            req.setAttribute("colorGroups", new java.util.HashMap<>());
+            req.setAttribute("variantStock", new java.util.HashMap<>());
+            req.setAttribute("variantIdByKey", new java.util.HashMap<>());
+            req.setAttribute("attrs", null);
+        }
+        // ====== [END VARIANT & ATTRIBUTES HOOK] ======
+
 
         req.setAttribute("pageTitle", p.getProductName());
         req.setAttribute("product", p);

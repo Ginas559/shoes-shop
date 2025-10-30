@@ -11,6 +11,7 @@ import java.util.Locale;
 
 import vn.iotstar.configs.JPAConfig;
 import vn.iotstar.entities.*;
+import java.lang.reflect.Method; // NEW
 
 /**
  * Quản lý giỏ hàng trong DB.
@@ -83,13 +84,26 @@ public class CartServlet extends HttpServlet {
 
     // -------------------- Helpers --------------------
 
+    /** parse helpers */
+    private Long parseLongSafe(String s) {
+        try { return (s == null || s.isBlank()) ? null : Long.valueOf(s); }
+        catch (Exception e) { return null; }
+    }
+    private int parseIntSafe(String s, int d) {
+        try { return (s == null || s.isBlank()) ? d : Integer.parseInt(s); }
+        catch (Exception e) { return d; }
+    }
+
     /** Thêm sản phẩm vào giỏ */
     private void add(HttpServletRequest req, HttpServletResponse resp, Long userId)
             throws IOException {
-        HttpSession session = req.getSession(); // ✅ thêm dòng này
+        HttpSession session = req.getSession(); // keep
         String productIdStr = req.getParameter("productId");
         String qtyStr = req.getParameter("quantity");
-        int quantity = (qtyStr == null || qtyStr.isBlank()) ? 1 : Integer.parseInt(qtyStr);
+        String variantIdStr = req.getParameter("variantId"); // NEW
+
+        int quantity = parseIntSafe(qtyStr, 1);
+        quantity = Math.max(1, quantity);
 
         EntityManager em = JPAConfig.getEntityManager();
         EntityTransaction tx = em.getTransaction();
@@ -97,7 +111,7 @@ public class CartServlet extends HttpServlet {
         try {
             tx.begin();
 
-            // Lấy giỏ của user, nếu chưa có thì tạo
+            // Lấy/khởi tạo Cart
             TypedQuery<Cart> q = em.createQuery(
                 "SELECT c FROM Cart c WHERE c.user.id = :uid", Cart.class);
             q.setParameter("uid", userId);
@@ -112,23 +126,99 @@ public class CartServlet extends HttpServlet {
             Long productId = Long.valueOf(productIdStr);
             Product product = em.getReference(Product.class, productId);
 
-            // Kiểm tra có sẵn item chưa
-            TypedQuery<CartItem> qi = em.createQuery(
-                "SELECT ci FROM CartItem ci WHERE ci.cart.cartId = :cid AND ci.product.productId = :pid",
-                CartItem.class);
-            qi.setParameter("cid", cart.getCartId());
-            qi.setParameter("pid", productId);
-            List<CartItem> found = qi.getResultList();
+            // === NEW: Kiểm tra sản phẩm có biến thể không
+            Long numVar = em.createQuery(
+                "SELECT COUNT(v) FROM ProductVariant v WHERE v.product.productId = :pid", Long.class)
+                .setParameter("pid", productId)
+                .getSingleResult();
+            boolean hasVariants = (numVar != null && numVar.longValue() > 0L);
 
-            if (!found.isEmpty()) {
-                CartItem item = found.get(0);
-                item.setQuantity(item.getQuantity() + quantity);
+            ProductVariant chosenVariant = null;
+            if (hasVariants) {
+                Long variantId = parseLongSafe(variantIdStr);
+                if (variantId == null) {
+                    tx.rollback();
+                    session.setAttribute("flash_error", "Vui lòng chọn màu và size (thiếu biến thể).");
+                    resp.sendRedirect(req.getContextPath() + "/product/" + productId);
+                    return;
+                }
+                // Tải biến thể & validate product match
+                chosenVariant = em.find(ProductVariant.class, variantId);
+                if (chosenVariant == null || chosenVariant.getProduct() == null
+                        || !chosenVariant.getProduct().getProductId().equals(productId)) {
+                    tx.rollback();
+                    session.setAttribute("flash_error", "Biến thể không hợp lệ.");
+                    resp.sendRedirect(req.getContextPath() + "/product/" + productId);
+                    return;
+                }
+                int stock = (chosenVariant.getStock() == null) ? 0 : chosenVariant.getStock();
+                if (stock <= 0) {
+                    tx.rollback();
+                    session.setAttribute("flash_error", "Biến thể đã hết hàng.");
+                    resp.sendRedirect(req.getContextPath() + "/product/" + productId);
+                    return;
+                }
+                if (quantity > stock) {
+                    quantity = stock; // chặn vượt tồn, hạ về tối đa
+                    if (quantity <= 0) {
+                        tx.rollback();
+                        session.setAttribute("flash_error", "Số lượng vượt tồn kho.");
+                        resp.sendRedirect(req.getContextPath() + "/product/" + productId);
+                        return;
+                    }
+                    // có thể báo nhẹ: giảm về stock
+                    session.setAttribute("flash", "Số lượng đã được điều chỉnh về tồn kho tối đa (" + stock + ").");
+                }
+            }
+
+            // === Tìm CartItem hiện có
+            CartItem item = null;
+
+            if (hasVariants && chosenVariant != null && hasCartItemVariantField()) {
+                // Nếu CartItem có field productVariant → query theo cả variant
+                TypedQuery<CartItem> qi = em.createQuery(
+                    "SELECT ci FROM CartItem ci " +
+                    "WHERE ci.cart.cartId = :cid AND ci.product.productId = :pid AND ci.productVariant.variantId = :vid",
+                    CartItem.class);
+                qi.setParameter("cid", cart.getCartId());
+                qi.setParameter("pid", productId);
+                qi.setParameter("vid", chosenVariant.getVariantId());
+                List<CartItem> found = qi.getResultList();
+                item = found.isEmpty() ? null : found.get(0);
+            } else {
+                // Fallback: như cũ (không có field productVariant)
+                TypedQuery<CartItem> qi = em.createQuery(
+                    "SELECT ci FROM CartItem ci WHERE ci.cart.cartId = :cid AND ci.product.productId = :pid",
+                    CartItem.class);
+                qi.setParameter("cid", cart.getCartId());
+                qi.setParameter("pid", productId);
+                List<CartItem> found = qi.getResultList();
+                item = found.isEmpty() ? null : found.get(0);
+            }
+
+            if (item != null) {
+                // Tăng số lượng (nếu có variant → vẫn tôn trọng stock của biến thể)
+                if (hasVariants && chosenVariant != null) {
+                    int stock = (chosenVariant.getStock() == null) ? 0 : chosenVariant.getStock();
+                    int newQty = item.getQuantity() + quantity;
+                    if (newQty > stock) newQty = stock;
+                    item.setQuantity(newQty);
+                    // set variant nếu có field
+                    setCartItemVariantIfSupported(item, chosenVariant);
+                } else {
+                    item.setQuantity(item.getQuantity() + quantity);
+                }
                 em.merge(item);
             } else {
-                CartItem item = new CartItem();
+                // Tạo CartItem mới
+                item = new CartItem();
                 item.setCart(cart);
                 item.setProduct(product);
                 item.setQuantity(quantity);
+                // Nếu có biến thể & CartItem hỗ trợ → set bằng reflection
+                if (hasVariants && chosenVariant != null) {
+                    setCartItemVariantIfSupported(item, chosenVariant);
+                }
                 em.persist(item);
             }
 
@@ -147,7 +237,7 @@ public class CartServlet extends HttpServlet {
     /** Cập nhật số lượng */
     private void update(HttpServletRequest req, HttpServletResponse resp, Long userId)
             throws IOException {
-        HttpSession session = req.getSession(); // ✅ thêm dòng này
+        HttpSession session = req.getSession(); // keep
         String itemIdStr = req.getParameter("itemId");
         String qtyStr = req.getParameter("quantity");
 
@@ -158,7 +248,16 @@ public class CartServlet extends HttpServlet {
             tx.begin();
             CartItem item = em.find(CartItem.class, Long.valueOf(itemIdStr));
             if (item != null && item.getCart().getUser().getId().equals(userId)) {
-                int newQty = Math.max(1, Integer.parseInt(qtyStr));
+                int newQty = Math.max(1, parseIntSafe(qtyStr, 1));
+
+                // Nếu có biến thể và CartItem hỗ trợ, giới hạn theo stock biến thể
+                ProductVariant pv = getCartItemVariantIfSupported(item);
+                if (pv != null) {
+                    pv = em.find(ProductVariant.class, pv.getVariantId()); // refresh
+                    int stock = (pv != null && pv.getStock() != null) ? pv.getStock() : Integer.MAX_VALUE;
+                    if (newQty > stock) newQty = stock;
+                }
+
                 item.setQuantity(newQty);
                 em.merge(item);
             }
@@ -176,7 +275,7 @@ public class CartServlet extends HttpServlet {
     /** Xoá sản phẩm khỏi giỏ */
     private void delete(HttpServletRequest req, HttpServletResponse resp, Long userId)
             throws IOException {
-        HttpSession session = req.getSession(); // ✅ thêm dòng này
+        HttpSession session = req.getSession(); // keep
         String itemIdStr = req.getParameter("itemId");
 
         EntityManager em = JPAConfig.getEntityManager();
@@ -198,5 +297,45 @@ public class CartServlet extends HttpServlet {
         }
 
         resp.sendRedirect(req.getContextPath() + "/cart");
+    }
+
+    // ---------- Reflection helpers để không phá build nếu CartItem chưa có field productVariant ----------
+    private boolean hasCartItemVariantField() {
+        try {
+            Class<?> c = CartItem.class;
+            // ưu tiên setter
+            for (Method m : c.getMethods()) {
+                if (m.getName().equals("setProductVariant") && m.getParameterCount() == 1) {
+                    return true;
+                }
+            }
+            // hoặc getter field
+            for (Method m : c.getMethods()) {
+                if (m.getName().equals("getProductVariant") && m.getParameterCount() == 0) {
+                    return true;
+                }
+            }
+        } catch (Exception ignore) {}
+        return false;
+    }
+
+    private void setCartItemVariantIfSupported(CartItem item, ProductVariant pv) {
+        try {
+            Method m = CartItem.class.getMethod("setProductVariant", ProductVariant.class);
+            m.invoke(item, pv);
+        } catch (NoSuchMethodException miss) {
+            // bỏ qua nếu không có field (fallback sản phẩm-only)
+        } catch (Exception ignore) {}
+    }
+
+    private ProductVariant getCartItemVariantIfSupported(CartItem item) {
+        try {
+            Method m = CartItem.class.getMethod("getProductVariant");
+            Object r = m.invoke(item);
+            if (r instanceof ProductVariant) return (ProductVariant) r;
+        } catch (NoSuchMethodException miss) {
+            // không có field
+        } catch (Exception ignore) {}
+        return null;
     }
 }
