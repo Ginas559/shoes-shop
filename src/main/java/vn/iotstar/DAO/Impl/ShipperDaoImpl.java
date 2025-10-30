@@ -1,5 +1,7 @@
 package vn.iotstar.DAO.Impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.EntityManager;
@@ -177,6 +179,62 @@ public class ShipperDaoImpl implements IShipperDao {
 			em.close();
 		}
 	}
+	
+	@Override
+	public BigDecimal TotalRevenue(User user) {
+	    EntityManager em = JPAConfig.getEntityManager();
+	    try {
+	        
+	        
+	        String jpql = "SELECT SUM(o.totalAmount) FROM Order o WHERE o.shipper = :user "
+	                    + "AND o.status = :statusSuccess ";
+	                    
+	        
+	        // Hoặc dùng JOIN FETCH như bạn đã bắt đầu, nhưng không cần thiết khi chỉ dùng SUM:
+	        // String jpql = "SELECT SUM(o.totalPrice) FROM Order o JOIN o.user u WHERE u = :user ...";
+	        
+	        // Thực thi truy vấn
+	        BigDecimal result = em.createQuery(jpql, BigDecimal.class)
+	                .setParameter("user", user)
+	                .setParameter("statusSuccess", OrderStatus.DELIVERED) // Thay 'SUCCESS' bằng enum/String status thực tế của bạn
+	                // Đặt tham số ngày: Đảm bảo orderDate trong Order là kiểu Date/Timestamp hoặc tương đương
+	                
+	                .getSingleResult();
+	        
+	        // Xử lý trường hợp không có đơn hàng nào khớp
+	        return result != null ? result : BigDecimal.ZERO;
 
+	    } catch (Exception e) {
+	        // Ghi log lỗi nếu cần
+	        e.printStackTrace();
+	        return BigDecimal.ZERO; // Trả về 0 nếu có lỗi xảy ra
+	    } finally {
+	        em.close();
+	    }
+	}
+
+	@Override
+	public int SuccessfulOrder(User user) {
+	    EntityManager em = JPAConfig.getEntityManager();
+	    try {
+	        String jpql = "SELECT COUNT(o) FROM Order o WHERE o.shipper = :user "
+	                    + "AND o.status = :statusSuccess";
+
+	        // Thay int.class bằng Long.class
+	        Long countResult = em.createQuery(jpql, Long.class)
+	                .setParameter("user", user)
+	                .setParameter("statusSuccess", OrderStatus.DELIVERED)
+	                .getSingleResult();
+
+	        // Chuyển đổi sang int
+	        return countResult != null ? countResult.intValue() : 0;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return 0;
+	    } finally {
+	        em.close();
+	    }
+	}
 	
 }

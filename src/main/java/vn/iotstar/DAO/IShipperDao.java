@@ -1,5 +1,6 @@
 package vn.iotstar.DAO;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import vn.iotstar.entities.Order;
@@ -17,6 +18,10 @@ public interface IShipperDao {
 	List<User> searchShippers(String keyword, String banned, int page, int pageSize);
 
 	int countShippers(String keyword, String banned);
+
+	int SuccessfulOrder(User user);
+
+	BigDecimal TotalRevenue(User user);
 
 
 }

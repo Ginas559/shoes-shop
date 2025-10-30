@@ -16,6 +16,7 @@ import vn.iotstar.services.shipper.ShipperService;
 
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor.Builder;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
@@ -137,11 +138,19 @@ public class ShipperController extends HttpServlet {
 		// --- 5. Trang Thống Kê Cá Nhân ---
 		else if (uri.endsWith("/shipper/statistics/view")) {
 			// Giả định: Gọi Service để lấy dữ liệu thống kê
+			User shipper = (User) request.getSession().getAttribute("currentUser");
+			int successfulOrder = shipService.SuccessfulOrder(shipper);
+			BigDecimal totalRevenue = shipService.TotalRevenue(shipper);
+			double cancellationRate = 0.05;
+			
 			// ShipperStats stats = shipperService.getShipperStatistics(shipperId);
 			// request.setAttribute("shipperStats", stats);
 
 			// MOCK DATA
-			// request.setAttribute("shipperStats", mockShipperStats());
+			request.setAttribute("totalDelivered", successfulOrder);
+			request.setAttribute("totalRevenue", totalRevenue);
+			request.setAttribute("cancellationRate", cancellationRate);
+			
 			request.setAttribute("pageTitle", "Thống kê hiệu suất");
 			request.getRequestDispatcher("/WEB-INF/views/shipper/statistics.jsp").forward(request, response);
 		}
@@ -296,9 +305,8 @@ public class ShipperController extends HttpServlet {
 				// =========================================================
 				else if (uri.endsWith("/shipper/my-orders/return")) {
 
-					// **Giả định hàm mới:** updateOrderStatus(orderId, shipperId, RETURNED)
-					// Cần thêm logic xử lý lý do trả hàng thực tế
-					// shipService.returnOrder(orderId, shipperId);
+					
+					shipService.dropOrder(orderId, shipperId);
 
 					successMessage = "Đã báo cáo trả lại đơn hàng #" + orderId + ".";
 					redirectUrl = request.getContextPath() + "/shipper/my-orders"; // Quay lại danh sách đơn

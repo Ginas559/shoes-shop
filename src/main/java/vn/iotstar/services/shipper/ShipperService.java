@@ -1,5 +1,6 @@
 package vn.iotstar.services.shipper;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.persistence.EntityManager;
@@ -198,5 +199,15 @@ public class ShipperService {
 	public int countShipper(String keyword, String banned) {
 		return shipperDao.countShippers(keyword, banned);
 	}
+	
+	public int SuccessfulOrder(User user) {
+		return shipperDao.SuccessfulOrder(user);
+	}
+	
+	public BigDecimal TotalRevenue(User user) {
+		return shipperDao.TotalRevenue(user);
+	}
+	
+	
 }
 

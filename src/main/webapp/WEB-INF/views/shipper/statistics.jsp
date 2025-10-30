@@ -3,19 +3,19 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <h1 class="mb-4 text-dark">📈 Thống Kê Hiệu Suất Của Tôi</h1>
-<p class="lead">Tổng quan hoạt động trong 7 ngày gần nhất.</p>
+<p class="lead">Tổng quan hoạt động.</p>
 
 <div class="row g-4 mb-5">
     <%-- Giả định các biến thống kê được truyền vào --%>
-    <c:set var="totalDelivered" value="${shipperStats.totalDelivered}" />
-    <c:set var="totalRevenue" value="${shipperStats.totalRevenue}" />
-    <c:set var="cancellationRate" value="${shipperStats.cancellationRate}" />
+    <c:set var="totalDelivered" value="${totalDelivered}" />
+    <c:set var="totalRevenue" value="${totalRevenue}" />
+    <c:set var="cancellationRate" value="${cancellationRate}" />
 
     <div class="col-md-4">
         <div class="card text-center bg-success text-white shadow-sm h-100">
             <div class="card-body">
                 <h1 class="card-title display-4 fw-bold"><c:out value="${totalDelivered}"/></h1>
-                <p class="card-text">Đơn hàng đã giao thành công (7 ngày)</p>
+                <p class="card-text">Đơn hàng đã giao thành công</p>
             </div>
         </div>
     </div>
@@ -23,9 +23,9 @@
         <div class="card text-center bg-primary text-white shadow-sm h-100">
             <div class="card-body">
                 <h1 class="card-title display-4 fw-bold">
-                    <fmt:formatNumber value="${totalRevenue}" type="currency" currencyCode="VND" maxFractionDigits="0"/>
+                    <fmt:formatNumber value="${totalRevenue * 0.2}" type="currency" currencyCode="VND" maxFractionDigits="0"/>
                 </h1>
-                <p class="card-text">Tổng Thu Nhập Ước Tính (7 ngày)</p>
+                <p class="card-text">Tổng Thu Nhập Ước Tính</p>
             </div>
         </div>
     </div>
