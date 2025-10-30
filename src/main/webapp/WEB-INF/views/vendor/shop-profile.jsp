@@ -1,30 +1,50 @@
-<!-- filepath: src/main/webapp/WEB-INF/views/vendor/shop-profile.jsp -->
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
+
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${pageTitle != null ? pageTitle : 'BMTT Shop'}</title>
+
+<sitemesh:write property="head" />
+
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/assets/css/web.css">
+
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 
-<div class="container py-4">
-	<h3 class="mb-3">Hồ sơ cửa hàng</h3>
+<div class="main-shop-profile py-4">
 
-	<!-- Hành động nhanh: Chat & Quản lý nhân viên -->
+	<h3 class="mb-3 gradient-text">Hồ sơ cửa hàng</h3>
+
 	<c:if test="${not empty shop and not empty shop.shopId}">
 		<div class="mb-3 d-flex flex-wrap gap-2">
-			<a href="${ctx}/chat?shopId=${shop.shopId}" class="btn btn-outline-primary">
+		
+			<a href="${ctx}/chat?shopId=${shop.shopId}" class="btn btn-chat">
 				💬 Chat nội bộ
 			</a>
 
-			<a href="${ctx}/vendor/staffs" class="btn btn-outline-success">
+			<a href="${ctx}/vendor/staffs" class="btn btn-success">
 				👥 Quản lý nhân viên
 				<c:if test="${not empty staffCount}">
-					<span class="badge bg-secondary">${staffCount}</span>
+					<span class="badge bg-light text-dark">${staffCount}</span>
 				</c:if>
 			</a>
 		</div>
 	</c:if>
 
-	<!-- Form cập nhật thông tin cửa hàng -->
 	<form action="${ctx}/vendor/shop" method="post"
-		enctype="multipart/form-data" class="card p-3 shadow-sm">
+		enctype="multipart/form-data" class="card kpi-card p-3 shadow-sm">
 		<div class="mb-3">
 			<label class="form-label">Tên cửa hàng</label> 
 			<input type="text" class="form-control" name="shopName"
@@ -37,7 +57,6 @@
 		</div>
 
 		<div class="row">
-			<!-- Logo -->
 			<div class="col-md-6 mb-3">
 				<label class="form-label">Logo (Avatar)</label> 
 				<input type="file" class="form-control" name="logo" accept="image/*" />
@@ -57,7 +76,6 @@
 				</div>
 			</div>
 
-			<!-- Cover -->
 			<div class="col-md-6 mb-3">
 				<label class="form-label">Ảnh bìa (Cover)</label> 
 				<input type="file" class="form-control" name="cover" accept="image/*" />
@@ -83,9 +101,9 @@
 		</div>
 	</form>
 
-	<!-- Card tuỳ chọn: thêm nhanh nhân viên (nếu muốn thao tác trực tiếp tại đây) -->
 	<c:if test="${not empty shop}">
-		<div class="card mt-4 shadow-sm">
+	
+		<div class="card kpi-card mt-4 shadow-sm">
 			<div class="card-body">
 				<h5 class="card-title">Thêm nhân viên nhanh</h5>
 				<form method="post" action="${ctx}/vendor/staffs/add" class="row g-2">
@@ -105,4 +123,5 @@
 			</div>
 		</div>
 	</c:if>
+
 </div>

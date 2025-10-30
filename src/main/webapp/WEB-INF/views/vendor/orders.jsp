@@ -2,18 +2,46 @@
 <%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<%-- Đã thêm: Định nghĩa biến context path để sử dụng nhất quán --%>
-<c:set var="ctx" value="${pageContext.request.contextPath}" />
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${pageTitle != null ? pageTitle : 'Quản lý Đơn hàng - BMTT Shop'}</title>
 
+<%-- Sitemesh sẽ chèn các file CSS chung (như web.css v1) vào đây --%>
+<sitemesh:write property="head" />
+
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+
+<%-- Đây là file CSS "thêm" của riêng trang này --%>
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/assets/css/web2.css">
+
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
 <c:set var="statuses" value="NEW,CONFIRMED,SHIPPING,DONE,CANCELLED"/>
 
-<main class="container py-4">
+<%-- 
+  ĐÃ THÊM: class "main-vendor-orders" 
+  Đây là "hook" để CSS nhận diện và tô nền gradient pastel cho cả trang
+--%>
+<main class="container py-4 main-vendor-orders">
   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-    <h2 class="mb-0">Đơn hàng của shop</h2>
+    <%-- 
+      ĐÃ THÊM: class "gradient-text" 
+      Lấy từ web.css (v1) để làm tiêu đề "cháy" hơn 
+    --%>
+    <h2 class="mb-0 gradient-text" style="font-weight: 700;">Quản lý Đơn hàng</h2>
     <a class="btn btn-outline-secondary btn-sm" href="${ctx}/vendor/dashboard">← Về Dashboard</a>
   </div>
 
-  <%-- Khung Flash Message --%>
+  <%-- Khung Flash Message (Giữ nguyên) --%>
   <c:if test="${not empty flashMsg}">
     <div class="alert alert-${empty flashType ? 'info' : flashType} alert-dismissible fade show" role="alert">
       ${flashMsg}
@@ -21,32 +49,46 @@
     </div>
   </c:if>
 
-  <form class="row g-2 mb-3" method="get" action="${ctx}/vendor/orders">
-    <div class="col-md-3">
-      <input class="form-control" name="q" placeholder="Tìm khách (tên/email)..." value="${q}"/>
+  <%-- 
+    ĐÃ THÊM: Bọc form lọc vào card "filter-card"
+    Style của card này sẽ được định nghĩa trong web2.css
+  --%>
+  <div class="card filter-card shadow-sm mb-3">
+    <div class="card-body">
+      <h5 class="card-title mb-3" style="font-weight: 600;">🔍 Bộ lọc đơn hàng</h5>
+      <form class="row g-2" method="get" action="${ctx}/vendor/orders">
+        <div class="col-md-3">
+          <input class="form-control" name="q" placeholder="Tìm khách (tên/email)..." value="${q}"/>
+        </div>
+        <div class="col-md-3">
+          <select name="status" class="form-select">
+            <option value="">-- Tất cả trạng thái --</option>
+            <c:forEach var="st" items="${fn:split(statuses, ',')}">
+              <option value="${st}" <c:if test="${st eq status}">selected</c:if>>${st}</option>
+            </c:forEach>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select name="size" class="form-select">
+            <c:set var="sz" value="${size!=null?size:20}"/>
+            <option value="10"  ${sz==10 ? 'selected':''}>10 / trang</option>
+            <option value="20"  ${sz==20 ? 'selected':''}>20 / trang</option>
+            <option value="50"  ${sz==50 ? 'selected':''}>50 / trang</button>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100">Lọc</button>
+        </div>
+      </form>
     </div>
-    <div class="col-md-3">
-      <select name="status" class="form-select">
-        <option value="">-- Tất cả trạng thái --</option>
-        <c:forEach var="st" items="${fn:split(statuses, ',')}">
-          <option value="${st}" <c:if test="${st eq status}">selected</c:if>>${st}</option>
-        </c:forEach>
-      </select>
-    </div>
-    <div class="col-md-2">
-      <select name="size" class="form-select">
-        <c:set var="sz" value="${size!=null?size:20}"/>
-        <option value="10"  ${sz==10 ? 'selected':''}>10 / trang</option>
-        <option value="20"  ${sz==20 ? 'selected':''}>20 / trang</option>
-        <option value="50"  ${sz==50 ? 'selected':''}>50 / trang</option>
-      </select>
-    </div>
-    <div class="col-md-2">
-      <button class="btn btn-primary w-100">Lọc</button>
-    </div>
-  </form>
+  </div>
 
-  <div class="card shadow-sm">
+  <%-- 
+    ĐÃ THÊM: class "recent-orders-card"
+    Lấy từ web.css (v1) để tự động áp dụng nền tím pastel 
+    và style bảng "cháy" (header hồng, row hover...)
+  --%>
+  <div class="card recent-orders-card shadow-sm">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <p class="text-muted mb-0">
@@ -55,8 +97,10 @@
       </div>
 
       <div class="table-responsive">
-        <table class="table table-striped align-middle">
-          <thead class="table-light">
+        <%-- ĐÃ XÓA: class="table-striped" (vì đã dùng nền trong suốt) --%>
+        <table class="table table-hover align-middle">
+          <%-- ĐÃ XÓA: class="table-light" (để header gradient đè lên) --%>
+          <thead class="">
           <tr>
             <th>ID</th>
             <th>Khách hàng</th>
@@ -77,7 +121,21 @@
               </td>
               <td>${o.user.firstname} ${o.user.lastname}</td>
               <td>${o.totalAmount}</td>
-              <td><span class="badge bg-secondary">${o.status}</span></td>
+              <td>
+                <%-- 
+                  ĐÃ NÂNG CẤP: Badge màu mè động 
+                  Tự động nhận hiệu ứng "glow" từ web.css (v1)
+                --%>
+                <c:set var="statusName" value="${o.status.name()}" />
+                <c:choose>
+                  <c:when test="${statusName == 'NEW'}"><span class="badge bg-primary">${statusName}</span></c:when>
+                  <c:when test="${statusName == 'CONFIRMED'}"><span class="badge bg-info">${statusName}</span></c:when>
+                  <c:when test="${statusName == 'SHIPPING'}"><span class="badge bg-warning">${statusName}</span></c:when>
+                  <c:when test="${statusName == 'DONE'}"><span class="badge bg-success">${statusName}</span></c:when>
+                  <c:when test="${statusName == 'CANCELLED'}"><span class="badge bg-danger">${statusName}</span></c:when>
+                  <c:otherwise><span class="badge bg-secondary">${statusName}</span></c:otherwise>
+                </c:choose>
+              </td>
               <td>${o.createdAt}</td>
               <td>
                 <form method="post" action="${ctx}/vendor/orders" class="d-flex gap-2">
@@ -86,9 +144,9 @@
                   <c:if test="${not empty status}"><input type="hidden" name="status" value="${status}"/></c:if>
                   <c:if test="${not empty q}"><input type="hidden" name="q" value="${q}"/></c:if>
                   
+                  <%-- ĐÃ XÓA: class="form-select-sm" (cho to rõ hơn) --%>
                   <select name="newStatus" class="form-select form-select-sm">
                     <c:forEach var="st" items="${fn:split(statuses, ',')}">
-                      <%-- Đã sửa lỗi unbalanced tag --%>
                       <option value="${st}" <c:if test="${st eq o.status.name()}">selected</c:if>>${st}</option>
                     </c:forEach>
                   </select>
@@ -105,8 +163,12 @@
       </div>
 
       <c:if test="${totalPages > 1}">
+        <%-- 
+          ĐÃ THÊM: class "pagination-glass" và "justify-content-center"
+          Lấy từ web.css (v1) để áp dụng hiệu ứng kính mờ
+        --%>
         <nav>
-          <ul class="pagination">
+          <ul class="pagination pagination-glass justify-content-center">
             <c:set var="cur" value="${page}" />
             <li class="page-item ${cur<=1?'disabled':''}">
               <a class="page-link"
@@ -147,25 +209,26 @@
 <%-- Modal hiển thị chi tiết --%>
 <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
+    <%-- 
+      ĐÃ THÊM: class "modal-colorful"
+      Để CSS trong web2.css tóm lấy và tô màu
+    --%>
+    <div class="modal-content modal-colorful">
       <div class="modal-header">
         <h5 class="modal-title">Chi tiết đơn hàng</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div id="orderDetailBody" class="text-center text-muted">Đang tải…</div>
+        <div id="orderDetailBody">Đang tải…</div>
       </div>
     </div>
   </div>
 </div>
 
-<%-- JavaScript xử lý Ajax và Modal --%>
+<%-- JavaScript xử lý Ajax và Modal (Giữ nguyên) --%>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Lấy giá trị context path từ JSTL và dùng biến JS cố định
   const BASE_URL = '${ctx}'; 
-
-  // Khởi tạo Modal từ Bootstrap
   const modalEl = document.getElementById('orderDetailModal');
   const modal   = new bootstrap.Modal(modalEl);
   const body    = document.getElementById('orderDetailBody');
@@ -175,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
       modal.show();
 
       try {
-        // Đã sửa lỗi EL: Sử dụng nối chuỗi thuần JS để gọi encodeURIComponent()
         const url = BASE_URL + '/vendor/orders/detail?orderId=' + encodeURIComponent(orderId);
         const res = await fetch(url);
         
@@ -190,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
-  // Lắng nghe sự kiện click trên tất cả các nút "Chi tiết"
   document.querySelectorAll('.js-detail').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;

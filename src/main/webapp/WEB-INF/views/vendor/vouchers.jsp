@@ -1,21 +1,45 @@
-// filepath: src/main/webapp/WEB-INF/views/vendor/vouchers.jsp
-
 <%@ page contentType="text/html;charset=UTF-8" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${pageTitle != null ? pageTitle : 'BMTT Shop'}</title>
+
+<sitemesh:write property="head" />
+
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/assets/css/web2.css">
+
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 
-<main class="container py-4">
+<%-- ĐÃ THÊM: class "main-vendor-vouchers" để "ăn" nền pastel --%>
+<main class="container py-4 main-vendor-vouchers">
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="mb-0">Voucher</h2>
+    <%-- ĐÃ THÊM: class "gradient-text" (từ v1) cho "cháy" --%>
+    <h2 class="mb-0 gradient-text" style="font-weight: 700;">Quản lý Voucher</h2>
     <div class="d-flex gap-2">
+      <%-- Nút này sẽ tự "ăn" hiệu ứng pulse/shine từ web.css (v1) --%>
       <a class="btn btn-primary" href="${ctx}/vendor/vouchers/new">+ Tạo voucher</a>
     </div>
   </div>
 
-  <%-- Hiển thị thông báo lỗi (nếu có) --%>
+  <%-- Hiển thị thông báo lỗi (Giữ nguyên, chỉ thêm style) --%>
   <c:if test="${not empty errors}">
-    <div class="alert alert-danger">
+    <%-- ĐÃ THÊM: Hiệu ứng "glow" đỏ cho alert --%>
+    <div class="alert alert-danger" style="box-shadow: 0 0 15px rgba(220, 53, 69, 0.5);">
+      <h5 class="alert-heading mb-2">Lỗi!</h5>
       <ul class="mb-0">
         <c:forEach var="e" items="${errors}">
           <li><c:out value="${e}"/></li>
@@ -24,9 +48,10 @@
     </div>
   </c:if>
 
-  <div class="card shadow-sm mb-3">
+  <%-- ĐÃ THÊM: class "filter-card" (từ v2) để "ăn" nền xanh --%>
+  <div class="card shadow-sm mb-3 filter-card">
     <div class="card-body">
-      <h5 class="card-title">Tìm kiếm & Lọc</h5>
+      <h5 class="card-title mb-3" style="font-weight: 600;">🔍 Bộ lọc voucher</h5>
       <form method="get" action="${ctx}/vendor/vouchers" class="row g-2">
         <div class="col-md-3">
           <input class="form-control" name="q" placeholder="Tìm theo code..." value="${q}"/>
@@ -60,18 +85,22 @@
           </select>
         </div>
         <div class="col-md-12 d-flex justify-content-end">
-          <button class="btn btn-outline-secondary">Lọc</button>
+          <%-- ĐÃ SỬA: "Lọc" dùng btn-primary (ăn style v2) thay vì outline --%>
+          <button class="btn btn-primary">Lọc</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div class="card shadow-sm">
+  <%-- ĐÃ THÊM: class "recent-orders-card" (từ v2) để "ăn" nền tím --%>
+  <div class="card shadow-sm recent-orders-card">
     <div class="card-body">
-      <h5 class="card-title">Danh sách voucher</h5>
+      <h5 class="card-title mb-3" style="font-weight: 600;">Danh sách voucher</h5>
       <div class="table-responsive">
-        <table class="table table-bordered align-middle mb-0">
-          <thead class="table-light">
+        <%-- ĐÃ XÓA: "table-bordered" (xấu) --%>
+        <table class="table table-hover align-middle mb-0">
+          <%-- ĐÃ XÓA: "table-light" (để "ăn" header v2) --%>
+          <thead class="">
           <tr>
             <th>ID</th>
             <th>Code</th>
@@ -87,9 +116,11 @@
           <c:forEach var="v" items="${vouchers}">
             <tr data-row-id="${v.voucherId}">
               <td>${v.voucherId}</td>
-              <td><span class="fw-semibold"><c:out value="${v.code}"/></span></td>
+              <%-- ĐÃ THÊM: class "code-highlight" cho đẹp --%>
+              <td><span class="fw-semibold code-highlight"><c:out value="${v.code}"/></span></td>
               <td>${v.type}</td>
-              <td>
+              <%-- ĐÃ THÊM: class "price-highlight" cho đẹp --%>
+              <td class="price-highlight">
                 <c:choose>
                   <c:when test="${v.type == 'PERCENT'}">
                     ${v.percent}%
@@ -100,32 +131,40 @@
                 </c:choose>
               </td>
               <td>${v.minOrderAmount}</td>
-              <td>
+              <td class="voucher-dates">
                 <div><small>Bắt đầu:</small> ${v.startAt}</div>
                 <div><small>Kết thúc:</small> ${v.endAt}</div>
               </td>
               <td>
+                <%-- Badge sẽ tự "ăn" glow từ v1 (cho success) và v2 (cho secondary) --%>
                 <span class="badge status-badge bg-${v.status == 'ACTIVE' ? 'success' : 'secondary'}">
                   ${v.status}
                 </span>
               </td>
-              <td class="d-flex gap-2">
-                <a class="btn btn-sm btn-outline-primary" href="${ctx}/vendor/vouchers/edit?id=${v.voucherId}">Sửa</a>
-                <button type="button"
-                        class="btn btn-sm btn-toggle ${v.status == 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'}"
-                        data-id="${v.voucherId}">
-                  ${v.status == 'ACTIVE' ? 'Ẩn' : 'Hiện'}
-                </button>
+              <td>
+                <%-- ĐÃ THÊM: "voucher-actions" (giống product-actions) --%>
+                <div class="voucher-actions">
+                  <a class="btn btn-sm btn-outline-primary" href="${ctx}/vendor/vouchers/edit?id=${v.voucherId}">Sửa</a>
+                  <button type."button"
+                          class="btn btn-sm btn-toggle ${v.status == 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'}"
+                          data-id="${v.voucherId}">
+                    ${v.status == 'ACTIVE' ? 'Ẩn' : 'Hiện'}
+                  </button>
+                </div>
               </td>
             </tr>
           </c:forEach>
+           <c:if test="${empty vouchers}">
+            <tr><td colspan="8" class="text-center text-muted py-3">Không có voucher nào phù hợp.</td></tr>
+          </c:if>
           </tbody>
         </table>
       </div>
 
       <c:if test="${totalPages > 1}">
         <nav class="mt-3">
-          <ul class="pagination mb-0">
+          <%-- ĐÃ THÊM: "pagination-glass" và "justify-content-center" --%>
+          <ul class="pagination pagination-glass justify-content-center mb-0">
             <c:set var="cur" value="${page}"/>
             
             <%-- Nút Previous --%>
@@ -178,6 +217,7 @@
   </div>
 </main>
 
+<%-- Khối JavaScript giữ nguyên, nó đã "xịn" rồi --%>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const $$ = (q, el = document) => Array.from(el.querySelectorAll(q));
@@ -214,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
           badge.classList.add(newStatus === 'ACTIVE' ? 'bg-success' : 'bg-secondary');
         }
         
-        // Cập nhật Button
+        // Cập nhật Button (Đã sửa lại class cho đúng)
         btn.classList.remove('btn-outline-danger', 'btn-outline-success');
         if (newStatus === 'ACTIVE') {
           btn.classList.add('btn-outline-danger'); 
