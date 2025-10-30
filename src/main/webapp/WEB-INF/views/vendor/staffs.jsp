@@ -1,37 +1,35 @@
-<!-- src/main/webapp/WEB-INF/views/vendor/staffs.jsp -->
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
-<div class="container my-4">
-  <h3 class="mb-3">Nhân viên cửa hàng</h3>
+<div class="main-staffs py-4">
+
+  <h3 class="mb-3 gradient-text">Nhân viên cửa hàng</h3>
 
   <c:if test="${not empty sessionScope.flash}">
-    <div class="alert alert-success">${sessionScope.flash}</div>
+    <div class="alert alert-success glass-alert">${sessionScope.flash}</div>
     <c:remove var="flash" scope="session"/>
   </c:if>
   <c:if test="${not empty sessionScope.error}">
-    <div class="alert alert-danger">${sessionScope.error}</div>
+    <div class="alert alert-danger glass-alert">${sessionScope.error}</div>
     <c:remove var="error" scope="session"/>
   </c:if>
 
-  <!-- Add staff -->
-  <div class="card mb-4">
+  <div class="card kpi-card mb-4">
     <div class="card-body">
       <form method="post" action="${pageContext.request.contextPath}/vendor/staffs/add" class="row g-2">
         <div class="col-md-6">
           <input type="email" name="email" class="form-control" placeholder="Nhập email user để thêm vào shop" required />
         </div>
         <div class="col-auto">
-          <button class="btn btn-primary">Add staff</button>
+          <button class="btn btn-secondary">Add staff</button>
         </div>
       </form>
       <small class="text-muted">Chỉ chấp nhận tài khoản USER đã kích hoạt email. Mỗi user chỉ thuộc 1 shop.</small>
     </div>
   </div>
 
-  <!-- Staff list -->
-  <div class="card">
+  <div class="card recent-orders-card">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <div><strong>Shop:</strong> <c:out value="${shop.shopName}"/></div>
@@ -58,7 +56,8 @@
               <td><c:out value="${u.fullname}"/></td>
               <td><c:out value="${u.email}"/></td>
               <td><span class="badge bg-info">USER</span></td>
-              <td class="text-end">
+              
+              <td class="text-end product-actions">
                 <form method="post" action="${pageContext.request.contextPath}/vendor/staffs/delete" class="d-inline"
                       onsubmit="return confirm('Xóa nhân viên này khỏi shop?');">
                   <input type="hidden" name="userId" value="${u.id}"/>
@@ -75,4 +74,5 @@
       </div>
     </div>
   </div>
+  
 </div>
