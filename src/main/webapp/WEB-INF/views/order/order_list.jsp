@@ -1,6 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="jakarta.tags.core"%>
+<%@ taglib prefix="c"   uri="jakarta.tags.core"%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
+<%@ taglib prefix="fn"  uri="jakarta.tags.functions"%>
+
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <fmt:setLocale value="vi_VN" />
 
@@ -40,6 +42,7 @@
           <tr>
             <th>#</th>
             <th>Ngày tạo</th>
+            <th>Mã giao dịch</th>
             <th>Thanh toán</th>
             <th class="text-end">Tổng tiền</th>
             <th>Trạng thái</th>
@@ -48,13 +51,72 @@
         </thead>
         <tbody>
           <c:forEach var="o" items="${orders}">
+            <c:set var="txn" value="${paymentsByOrderId[o.orderId]}"/>
+
             <tr>
               <td>#${o.orderId}</td>
-              <td><c:out value="${o.createdAt}"/></td>
+
+              <%-- Hiển thị ngày: thử tuần tự, cái nào thành công thì in và dừng --%>
+              <td>
+                <c:set var="printed" value="false"/>
+
+                <%-- TH1: Thử format trực tiếp (nếu là java.util.Date/Timestamp sẽ ok) --%>
+                <c:catch var="e1">
+                  <fmt:formatDate value="${o.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                  <c:set var="printed" value="true"/>
+                </c:catch>
+
+                <%-- TH2: Parse chuỗi ISO có millis: yyyy-MM-dd'T'HH:mm:ss.SSS --%>
+                <c:if test="${not printed}">
+                  <c:catch var="e2">
+                    <fmt:parseDate value="${o.createdAt}" pattern="yyyy-MM-dd'T'HH:mm:ss.SSS" var="d1"/>
+                    <fmt:formatDate value="${d1}" pattern="dd/MM/yyyy HH:mm" />
+                    <c:set var="printed" value="true"/>
+                  </c:catch>
+                </c:if>
+
+                <%-- TH3: Parse chuỗi ISO có giây: yyyy-MM-dd'T'HH:mm:ss --%>
+                <c:if test="${not printed}">
+                  <c:catch var="e3">
+                    <fmt:parseDate value="${o.createdAt}" pattern="yyyy-MM-dd'T'HH:mm:ss" var="d2"/>
+                    <fmt:formatDate value="${d2}" pattern="dd/MM/yyyy HH:mm" />
+                    <c:set var="printed" value="true"/>
+                  </c:catch>
+                </c:if>
+
+                <%-- TH4: Parse chuỗi ISO không có giây: yyyy-MM-dd'T'HH:mm --%>
+                <c:if test="${not printed}">
+                  <c:catch var="e4">
+                    <fmt:parseDate value="${o.createdAt}" pattern="yyyy-MM-dd'T'HH:mm" var="d3"/>
+                    <fmt:formatDate value="${d3}" pattern="dd/MM/yyyy HH:mm" />
+                    <c:set var="printed" value="true"/>
+                  </c:catch>
+                </c:if>
+
+                <%-- Fallback: in nguyên giá trị nếu mọi cách đều fail (ví dụ LocalDateTime không parse khớp) --%>
+                <c:if test="${not printed}">
+                  <span class="text-muted small"><c:out value="${o.createdAt}"/></span>
+                </c:if>
+              </td>
+
+              <%-- Cột mã giao dịch --%>
+              <td>
+                <c:choose>
+                  <c:when test="${not empty txn && groupFirst != null && groupFirst.contains(o.orderId)}">
+                    <span class="fw-semibold">${txn}</span>
+                  </c:when>
+                  <c:otherwise>
+                    <span class="text-muted small">—</span>
+                  </c:otherwise>
+                </c:choose>
+              </td>
+
               <td><span class="badge text-bg-light"><c:out value="${o.paymentMethod}"/></span></td>
+
               <td class="text-end">
                 <fmt:formatNumber value="${o.totalAmount}" type="currency" currencySymbol="₫"/>
               </td>
+
               <td>
                 <c:choose>
                   <c:when test="${o.status=='NEW'}"><span class="badge text-bg-primary">Mới</span></c:when>
@@ -66,6 +128,7 @@
                   <c:otherwise><span class="badge text-bg-light"><c:out value="${o.status}"/></span></c:otherwise>
                 </c:choose>
               </td>
+
               <td class="text-end">
                 <a class="btn btn-sm btn-outline-primary" href="${ctx}/order/${o.orderId}">Xem chi tiết</a>
               </td>
@@ -75,6 +138,7 @@
       </table>
     </div>
   </c:when>
+
   <c:otherwise>
     <div class="text-center text-muted py-5">Chưa có đơn nào.</div>
   </c:otherwise>

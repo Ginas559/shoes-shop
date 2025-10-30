@@ -12,10 +12,11 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
- * User entity (18 fields) cho AUTH + SHOP:
- * - Chỉ unique: email, phone (theo yêu cầu).
+ * User entity (18+ fields) cho AUTH + SHOP:
+ * - Unique: email, phone.
  * - slug và id_card KHÔNG unique.
- * - Tự gen slug + timestamps bằng @PrePersist/@PreUpdate (không ép duy nhất).
+ * - Tự gen slug + timestamps bằng @PrePersist/@PreUpdate.
+ * - BỔ SUNG: staffShop (mỗi user chỉ làm cho 1 shop) để phục vụ UC_020.
  */
 @Entity
 @Table(
@@ -105,6 +106,13 @@ public class User {
     @Builder.Default
     private Boolean isBanned = false;
 
+    // ================== BỔ SUNG CHO UC_020: STAFF CỦA SHOP ==================
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "staff_shop_id",
+            foreignKey = @ForeignKey(name = "fk_users_staff_shop"))
+    private Shop staffShop; // null = không là staff shop nào; != null = staff của shop đó
+    // =======================================================================
+
     @PrePersist
     private void prePersist() {
         if (slug == null || slug.isBlank()) {
@@ -137,4 +145,15 @@ public class User {
         slug = slug.replaceAll("[-]{2,}", "-");
         return slug.toLowerCase(Locale.ROOT);
     }
+
+    // ===== tiện dùng cho JSP/Service =====
+    @Transient
+    public String getFullname() {
+        String f = firstname == null ? "" : firstname.trim();
+        String l = lastname == null ? "" : lastname.trim();
+        return (f + " " + l).trim();
+    }
+
+    @Transient
+    public boolean isStaff() { return staffShop != null; }
 }

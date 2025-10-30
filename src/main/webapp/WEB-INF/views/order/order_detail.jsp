@@ -19,7 +19,7 @@
   <c:remove var="flash_error" scope="session"/>
 </c:if>
 
-<!-- Thông báo từ servlet sau khi POST cancel -->
+<!-- Thông báo sau khi hủy -->
 <c:choose>
   <c:when test="${param.msg == 'cancel_success'}">
     <div class="alert alert-success">Đã hủy đơn hàng thành công.</div>
@@ -46,7 +46,9 @@
         </div>
         <div>
           <div class="text-muted small">Ngày tạo</div>
-          <div><c:out value="${order.createdAt}"/></div>
+          <div>
+            <c:out value="${order.createdAt != null ? order.createdAt.toString().replace('T', ' ') : '-'}"/>
+          </div>
         </div>
         <div>
           <div class="text-muted small">Thanh toán</div>
@@ -73,16 +75,62 @@
       </div>
     </div>
 
-    <!-- Hành động (Hủy đơn) -->
+    <!-- Nút mở modal xác nhận hủy -->
     <c:if test="${order.status=='NEW' || order.status=='CONFIRMED'}">
-      <form method="post" action="${ctx}/order/${order.orderId}" class="mb-3 text-end">
-        <input type="hidden" name="action" value="cancel"/>
-        <button type="submit" class="btn btn-outline-danger"
-                onclick="return confirm('Bạn chắc muốn hủy đơn hàng này?');">
+      <div class="text-end mb-3">
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
           Hủy đơn hàng
         </button>
-      </form>
+      </div>
+
+      <!-- ✅ Modal Bootstrap -->
+      <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+              <h5 class="modal-title" id="cancelModalLabel">Xác nhận hủy đơn hàng</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+              Bạn có chắc chắn muốn hủy đơn hàng <strong>#${order.orderId}</strong> không?<br>
+              Hành động này không thể hoàn tác.
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+              <form method="post" action="${ctx}/order/${order.orderId}">
+                <input type="hidden" name="action" value="cancel"/>
+                <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </c:if>
+
+    <!-- Thông tin cửa hàng -->
+    <div class="card mb-3">
+      <div class="card-header fw-semibold">Thông tin cửa hàng</div>
+      <div class="card-body">
+        <c:choose>
+          <c:when test="${order.shop != null}">
+            <div><strong>Tên cửa hàng:</strong> <c:out value="${order.shop.shopName}"/></div>
+            <div>
+              <strong>Email liên hệ:</strong>
+              <c:choose>
+                <c:when test="${not empty order.shop.vendor}">
+                  <c:out value="${order.shop.vendor.email}"/>
+                  <c:if test="${not empty order.shop.vendor.firstname || not empty order.shop.vendor.lastname}">
+                    (<c:out value="${order.shop.vendor.firstname}"/> <c:out value="${order.shop.vendor.lastname}"/>)
+                  </c:if>
+                </c:when>
+                <c:otherwise><span class="text-muted">Không có thông tin người quản lý</span></c:otherwise>
+              </c:choose>
+            </div>
+          </c:when>
+          <c:otherwise><span class="text-muted">Không có thông tin cửa hàng.</span></c:otherwise>
+        </c:choose>
+      </div>
+    </div>
 
     <!-- Địa chỉ giao hàng -->
     <div class="card mb-3">
@@ -93,9 +141,7 @@
             <div class="fw-semibold"><c:out value="${order.address.receiverName}"/> • <c:out value="${order.address.phone}"/></div>
             <div class="text-muted"><c:out value="${order.address.addressDetail}"/></div>
           </c:when>
-          <c:otherwise>
-            <span class="text-muted">Không có địa chỉ (dữ liệu thiếu).</span>
-          </c:otherwise>
+          <c:otherwise><span class="text-muted">Không có địa chỉ (dữ liệu thiếu).</span></c:otherwise>
         </c:choose>
       </div>
     </div>
@@ -124,16 +170,22 @@
                         <a class="text-decoration-none" href="${ctx}/product/${it.product.productId}">
                           <c:out value="${it.product.productName}"/>
                         </a>
+                        <!-- Nút Đánh giá khi đơn đã giao/hoàn -->
+                        <c:if test="${order.status=='DELIVERED' || order.status=='RETURNED'}">
+                          <div class="mt-1">
+                            <a class="btn btn-sm btn-primary"
+                               href="${ctx}/product/${it.product.productId}?from=order#reviews">
+                              Đánh giá sản phẩm
+                            </a>
+                          </div>
+                        </c:if>
                       </td>
                       <td class="text-end">
                         <fmt:formatNumber value="${it.price}" type="currency" currencySymbol="₫"/>
                       </td>
                       <td class="text-center">${it.quantity}</td>
+                      <td class="text-end"><c:out value="${it.discount}"/></td>
                       <td class="text-end">
-                        <c:out value="${it.discount}"/>
-                      </td>
-                      <td class="text-end">
-                        <!-- it.getSubtotal() là @Transient tính động -->
                         <fmt:formatNumber value="${it.subtotal}" type="currency" currencySymbol="₫"/>
                       </td>
                     </tr>
@@ -142,9 +194,7 @@
               </table>
             </div>
           </c:when>
-          <c:otherwise>
-            <div class="text-muted">Đơn hàng chưa có dòng sản phẩm.</div>
-          </c:otherwise>
+          <c:otherwise><div class="text-muted">Đơn hàng chưa có dòng sản phẩm.</div></c:otherwise>
         </c:choose>
       </div>
     </div>

@@ -41,6 +41,16 @@
   </div>
 </form>
 
-<div class="mt-3">
-  <a class="btn btn-outline-secondary" href="${ctx}/user/addresses">📦 Quản lý địa chỉ nhận hàng</a>
+<div class="mt-3 d-flex flex-wrap gap-2">
+  <a class="btn btn-outline-secondary" href="${ctx}/user/addresses">
+    📦 Quản lý địa chỉ nhận hàng
+  </a>
+
+  <!-- 👥 Nếu user là nhân viên của một shop -->
+  <c:if test="${not empty user.staffShop}">
+    <a class="btn btn-outline-success" href="${ctx}/vendor/dashboard">
+      👥 Vào shop của tôi
+    </a>
+  </c:if>
 </div>
+
