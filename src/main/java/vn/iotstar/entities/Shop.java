@@ -53,6 +53,9 @@ public class Shop {
  // thêm vào class Shop
     @Column(name = "slug", length = 160, unique = true)
     private String slug;
+    
+    @Column(name = "province", length = 100, columnDefinition = "NVARCHAR(100)")
+    private String province;
 
     
     // Đã hợp nhất, chỉ giữ lại một định nghĩa với khởi tạo mặc định.

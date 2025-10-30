@@ -1,8 +1,12 @@
+<%-- filepath: src/main/webapp/WEB-INF/views/products/list.jsp --%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<c:set var="brand" value="${param.brand}"/>
+<c:set var="gender" value="${param.gender}"/>
+<c:set var="style" value="${param.style}"/>
 
 <h1 class="h5 mb-3">${empty pageTitle ? 'Sản phẩm' : pageTitle}</h1>
 
@@ -11,7 +15,6 @@
     <input class="form-control" name="q" value="${param.q}" placeholder="Tìm kiếm...">
   </div>
 
-  <!-- Ô lọc theo Shop -->
   <div class="col-6 col-md-3">
     <input class="form-control" name="shopQ" list="shopList" value="${shopQ}" placeholder="Shop...">
     <datalist id="shopList">
@@ -62,7 +65,6 @@
     </select>
   </div>
 
-  <!-- Page size -->
   <div class="col-6 col-md-2">
     <select class="form-select" name="size">
       <c:set var="currSize" value="${empty param.size ? (empty page.size ? 12 : page.size) : param.size}"/>
@@ -71,6 +73,10 @@
       <option value="36" ${currSize==36?'selected':''}>36 / trang</option>
     </select>
   </div>
+
+  <input type="hidden" name="brand"  value="${brand}">
+  <input type="hidden" name="gender" value="${gender}">
+  <input type="hidden" name="style"  value="${style}">
 
   <div class="col-12 col-md-auto d-flex gap-2">
     <button class="btn btn-primary">Lọc</button>
@@ -125,6 +131,22 @@
               <div class="small text-muted text-truncate" title="${p.categoryName}">${p.categoryName}</div>
               <div class="fw-semibold text-truncate mb-1" title="${p.name}">${p.name}</div>
 
+              <div class="d-flex flex-wrap gap-1 small mb-1">
+                <c:if test="${not empty p.brand}">
+                  <span class="badge bg-light border text-secondary">Brand: ${p.brand}</span>
+                </c:if>
+                <c:if test="${not empty p.gender}">
+                  <span class="badge bg-light border text-secondary">Gender: ${p.gender}</span>
+                </c:if>
+                <c:if test="${not empty p.style}">
+                  <span class="badge bg-light border text-secondary">Style: ${p.style}</span>
+                </c:if>
+              </div>
+
+              <div class="small text-muted mb-1">
+                Tồn: <span class="fw-semibold">${empty p.stockTotal ? 0 : p.stockTotal}</span>
+              </div>
+
               <c:if test="${not empty p.shopName}">
                 <div class="d-flex align-items-center gap-2 small text-truncate mb-1" title="${p.shopName}">
                   <c:if test="${not empty p.shopLogoUrl}">
@@ -144,6 +166,9 @@
                               <c:param name='size'      value='${empty param.size ? (empty page.size ? 12 : page.size) : param.size}'/>
                               <c:param name='page'      value='1'/>
                               <c:param name='shopId'    value='${p.shopId}'/>
+                              <c:param name="brand"     value="${brand}"/>
+                              <c:param name="gender"    value="${gender}"/>
+                              <c:param name="style"     value="${style}"/>
                            </c:url>">
                     ${p.shopName}
                   </a>
@@ -204,6 +229,9 @@
                         <c:param name='size'      value='${empty param.size ? (empty page.size ? 12 : page.size) : param.size}'/>
                         <c:param name='page'      value='${page.number-1}'/>
                         <c:param name='shopId'    value='${param.shopId}'/>
+                        <c:param name="brand"     value="${brand}"/>
+                        <c:param name="gender"    value="${gender}"/>
+                        <c:param name="style"     value="${style}"/>
                     </c:url>">«</a>
           </li>
 
@@ -221,6 +249,9 @@
                           <c:param name='size'      value='${empty param.size ? (empty page.size ? 12 : page.size) : param.size}'/>
                           <c:param name='page'      value='${i}'/>
                           <c:param name='shopId'    value='${param.shopId}'/>
+                          <c:param name="brand"     value="${brand}"/>
+                          <c:param name="gender"    value="${gender}"/>
+                          <c:param name="style"     value="${style}"/>
                       </c:url>">${i}</a>
             </li>
           </c:forEach>
@@ -238,6 +269,9 @@
                         <c:param name='size'      value='${empty param.size ? (empty page.size ? 12 : page.size) : param.size}'/>
                         <c:param name='page'      value='${page.number+1}'/>
                         <c:param name='shopId'    value='${param.shopId}'/>
+                        <c:param name="brand"     value="${brand}"/>
+                        <c:param name="gender"    value="${gender}"/>
+                        <c:param name="style"     value="${style}"/>
                     </c:url>">»</a>
           </li>
         </ul>
@@ -250,7 +284,6 @@
   </c:otherwise>
 </c:choose>
 
-<!-- Đồng bộ shopQ <-> shopId: chuẩn hoá mạnh, bắt đủ sự kiện, sync trước submit -->
 <script>
   (function () {
     var form   = document.getElementById('filterForm');
