@@ -1,17 +1,16 @@
 // filepath: src/main/java/vn/iotstar/services/ProductBrowseService.java
-// + BỔ SUNG field cho ItemVM (brand, gender, style, stockTotal)
-// + THÊM overload page(...) có brand/gender/style và FILTER theo các tham số này
-// + Lấy batch ShoeAttribute & batch SUM stock theo productIds, tránh N+1
 
 package vn.iotstar.services;
 
 import vn.iotstar.configs.JPAConfig;
 import vn.iotstar.entities.Product;
 import vn.iotstar.entities.Category;
+import vn.iotstar.services.ReviewService; // <-- GIỮ LẠI (Tích hợp Review)
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.List;
 
 public class ProductBrowseService {
 
@@ -28,7 +27,7 @@ public class ProductBrowseService {
         private final Double ratingAvg;
         private final String coverUrl;
 
-        // NEW:
+        // BỔ SUNG: brand, gender, style, stockTotal (GIỮ LẠI)
         private final String brand;
         private final String gender;
         private final String style;
@@ -55,7 +54,7 @@ public class ProductBrowseService {
         public BigDecimal getDiscountPrice() { return discountPrice; }
         public Double getRatingAvg() { return ratingAvg; }
         public String getCoverUrl() { return coverUrl; }
-        // NEW getters
+        // NEW getters (GIỮ LẠI)
         public String getBrand() { return brand; }
         public String getGender() { return gender; }
         public String getStyle() { return style; }
@@ -89,7 +88,7 @@ public class ProductBrowseService {
         public boolean isHasNext() { return number < totalPages; }
     }
 
-    // Giữ API cũ (không shopId, không attr filter) -> GỌI OVERLOAD MỚI
+    // Giữ API cũ (không shopId, không attr filter) -> GỌI OVERLOAD MỚI (GIỮ LẠI)
     public PageResult<ItemVM> page(
             String q, Long catId,
             BigDecimal minPrice, BigDecimal maxPrice,
@@ -100,7 +99,7 @@ public class ProductBrowseService {
         return page(q, catId, minPrice, maxPrice, minRating, null, null, null, null, null, sort, page, size);
     }
 
-    // Giữ API cũ (có shopId, chưa attr filter) -> GỌI OVERLOAD MỚI
+    // Giữ API cũ (có shopId, chưa attr filter) -> GỌI OVERLOAD MỚI (GIỮ LẠI)
     public PageResult<ItemVM> page(
             String q, Long catId,
             BigDecimal minPrice, BigDecimal maxPrice,
@@ -112,7 +111,7 @@ public class ProductBrowseService {
         return page(q, catId, minPrice, maxPrice, minRating, shopId, null, null, null, null, sort, page, size);
     }
 
-    // ==== API MỚI NHẤT: có filter brand/gender/style/province ====
+    // ==== API MỚI NHẤT: có filter brand/gender/style/province (GIỮ LẠI) ====
     public PageResult<ItemVM> page(
             String q, Long catId,
             BigDecimal minPrice, BigDecimal maxPrice,
@@ -140,7 +139,7 @@ public class ProductBrowseService {
             }
             if (shopId != null) { where.append(" AND s.shopId = :shopId "); p.put("shopId", shopId); }
 
-            // Lọc theo thuộc tính sản phẩm (ShoeAttribute)
+            // Lọc theo thuộc tính sản phẩm (ShoeAttribute) (GIỮ LẠI)
             if (brand != null && !brand.isBlank()) {
                 where.append(" AND EXISTS (SELECT 1 FROM ShoeAttribute sa WHERE sa.product = p AND LOWER(sa.brand) = :brand) ");
                 p.put("brand", brand.toLowerCase());
@@ -154,7 +153,7 @@ public class ProductBrowseService {
                 p.put("style", style.toLowerCase());
             }
             
-            // NEW: lọc theo tỉnh/thành của Shop
+            // NEW: lọc theo tỉnh/thành của Shop (GIỮ LẠI)
             if (province != null && !province.isBlank()) {
                 // Chú ý: s.province là trường của Shop
                 where.append(" AND (s.province IS NOT NULL AND LOWER(s.province) = :prov) ");
@@ -195,7 +194,7 @@ public class ProductBrowseService {
                 "SELECT pi.imageUrl FROM ProductImage pi WHERE pi.product = :prod " +
                 "ORDER BY CASE WHEN pi.isThumbnail = true THEN 0 ELSE 1 END, pi.id", String.class);
 
-            // ===== Batch ShoeAttribute theo productIds =====
+            // ===== Batch ShoeAttribute theo productIds (GIỮ LẠI) =====
             List<Long> ids = new ArrayList<>(products.size());
             for (Product pr : products) ids.add(pr.getProductId());
 
@@ -218,7 +217,7 @@ public class ProductBrowseService {
                 // nếu thiếu entity ShoeAttribute, bỏ qua
             }
 
-            // ===== Batch SUM stock theo productIds từ ProductVariant =====
+            // ===== Batch SUM stock theo productIds từ ProductVariant (GIỮ LẠI) =====
             Map<Long, Integer> stockMap = new HashMap<>();
             try {
                 TypedQuery<Object[]> sQ = em.createQuery(
@@ -335,5 +334,27 @@ public class ProductBrowseService {
                 .setParameter("p", p)
                 .getResultList();
         } finally { em.close(); }
+    }
+
+    /* ================== REVIEW INTEGRATION (GIỮ LẠI) ================== */
+
+    /** Thống kê review cho trang chi tiết: avg & count */
+    public ReviewService.Stats reviewStats(Long productId) {
+        return new ReviewService().stats(productId);
+    }
+
+    /** Danh sách review mới nhất (giới hạn số lượng để hiển thị) */
+    public List<ReviewService.ReviewItem> reviews(Long productId, Integer limit) {
+        return new ReviewService().list(productId, limit);
+    }
+
+    /** Review của chính user (để hiển thị form sửa) */
+    public ReviewService.ReviewItem userReview(Long productId, Long userId) {
+        return new ReviewService().findByUser(productId, userId);
+    }
+
+    /** User có được phép review (đã mua hàng)? */
+    public boolean canReview(Long productId, Long userId) {
+        return new ReviewService().canReview(productId, userId);
     }
 }

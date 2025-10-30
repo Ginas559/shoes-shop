@@ -6,28 +6,29 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import jakarta.persistence.Query;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * ReviewService
- * - Bám sát bảng Product_Review(review_id, rating, comment_text, image_url, video_url, order_item_id, user_id, product_id?, created_at)
- * - Không phụ thuộc entity: dùng native SQL
- * - Cung cấp API:
- *   + stats(productId) -> Stats{avg,count}
- *   + list(productId, limit) -> List<ReviewItem>
- *   + findByUser(productId, userId) -> ReviewItem | null
- *   + canReview(productId, userId) -> boolean (đã mua hàng)
- *   + saveOrUpdate(userId, productId, rating, comment, imageUrl, videoUrl)
- *   + deleteByUser(userId, productId)
- *
- * Ghi chú:
- * - canReview: kiểm tra tồn tại đơn hàng của user có chứa product (JOIN Order_Item + [Order])
- * - Sau save/delete: cập nhật Product.rating_avg = AVG(rating) từ Product_Review
+ * - Product_Review không có product_id -> JOIN Order_Item
+ * - Bảng users: [dbo].[users], PK = id
  */
 public class ReviewService {
+
+    /* ====== NEW: exception ném khi quá hạn 24h ====== */
+    public static class TooLateException extends RuntimeException {
+        public TooLateException() { super("too_late"); }
+    }
+
+    private static final int MAX_IMAGES = 6;               // Giới hạn hợp lý như các shop
+    private static final int URL_MAX_LEN = 500;            // Khớp schema image_url varchar(500)
 
     private static volatile EntityManagerFactory EMF;
 
@@ -48,7 +49,6 @@ public class ReviewService {
 
     /* ============================ DTOs ============================ */
 
-    /** Tổng hợp cho JSP: reviewStats.avg / reviewStats.count */
     public static class Stats {
         private final double avg;
         private final long count;
@@ -57,7 +57,6 @@ public class ReviewService {
         public long   getCount() { return count; }
     }
 
-    /** Item hiển thị review */
     public static class ReviewItem {
         private final String userName;
         private final LocalDateTime createdAt;
@@ -85,16 +84,16 @@ public class ReviewService {
 
     /* ============================ READ ============================ */
 
-    /** Thống kê trung bình & số lượng review của 1 sản phẩm */
     public Stats stats(Long productId) {
         EntityManager em = em();
         try {
-            // AVG float để ra double, COUNT bigint
-            String sql = "SELECT " +
-                    "  COALESCE(AVG(CAST(r.rating AS FLOAT)), 0.0) AS avg_rating, " +
-                    "  COUNT(*) AS cnt " +
-                    "FROM Product_Review r " +
-                    "WHERE r.product_id = :pid";
+            String sql =
+                "SELECT " +
+                "  COALESCE(AVG(CAST(r.rating AS FLOAT)), 0.0) AS avg_rating, " +
+                "  COUNT(*) AS cnt " +
+                "FROM Product_Review r " +
+                "JOIN Order_Item oi ON oi.order_item_id = r.order_item_id " +
+                "WHERE oi.product_id = :pid";
             Object[] row = (Object[]) em.createNativeQuery(sql)
                     .setParameter("pid", productId)
                     .getSingleResult();
@@ -106,20 +105,19 @@ public class ReviewService {
         }
     }
 
-    /** Danh sách review mới nhất (kèm user name) */
     @SuppressWarnings("unchecked")
     public List<ReviewItem> list(Long productId, Integer limit) {
         int lim = (limit == null || limit <= 0) ? 10 : limit;
         EntityManager em = em();
         try {
-            // Lấy tên người dùng linh hoạt: full_name/username/email, fallback "User#id"
             String sql =
                 "SELECT " +
-                "  COALESCE(u.full_name, u.username, u.email, CONCAT('User#', CAST(u.user_id AS VARCHAR(20)))) AS user_name, " +
+                "  COALESCE(NULLIF(LTRIM(RTRIM(CONCAT(u.firstname,' ',u.lastname))), ''), u.email, CONCAT('User#', CAST(u.id AS VARCHAR(20)))) AS user_name, " +
                 "  r.created_at, r.rating, r.comment_text, r.image_url, r.video_url " +
                 "FROM Product_Review r " +
-                "JOIN [User] u ON u.user_id = r.user_id " +
-                "WHERE r.product_id = :pid " +
+                "JOIN [dbo].[users] u ON u.id = r.user_id " +
+                "JOIN Order_Item oi ON oi.order_item_id = r.order_item_id " +
+                "WHERE oi.product_id = :pid " +
                 "ORDER BY r.created_at DESC";
 
             Query q = em.createNativeQuery(sql);
@@ -143,18 +141,19 @@ public class ReviewService {
         }
     }
 
-    /** Review của chính user cho 1 sản phẩm (để form hiển thị lại) */
     public ReviewItem findByUser(Long productId, Long userId) {
         if (userId == null) return null;
         EntityManager em = em();
         try {
             String sql =
                 "SELECT " +
-                "  COALESCE(u.full_name, u.username, u.email, CONCAT('User#', CAST(u.user_id AS VARCHAR(20)))) AS user_name, " +
+                "  COALESCE(NULLIF(LTRIM(RTRIM(CONCAT(u.firstname,' ',u.lastname))), ''), u.email, CONCAT('User#', CAST(u.id AS VARCHAR(20)))) AS user_name, " +
                 "  r.created_at, r.rating, r.comment_text, r.image_url, r.video_url " +
                 "FROM Product_Review r " +
-                "JOIN [User] u ON u.user_id = r.user_id " +
-                "WHERE r.product_id = :pid AND r.user_id = :uid";
+                "JOIN [dbo].[users] u ON u.id = r.user_id " +
+                "JOIN Order_Item oi ON oi.order_item_id = r.order_item_id " +
+                "WHERE oi.product_id = :pid AND r.user_id = :uid " +
+                "ORDER BY r.created_at DESC";
             List<?> rows = em.createNativeQuery(sql)
                     .setParameter("pid", productId)
                     .setParameter("uid", userId)
@@ -175,74 +174,105 @@ public class ReviewService {
     }
 
     /**
-     * User có được phép review?
-     * Mặc định: phải đăng nhập & từng mua sản phẩm (tồn tại Order_Item của user cho product).
-     * Nếu muốn “ai cũng review được”, có thể sửa return true nếu userId != null.
+     * Chỉ cho phép đánh giá nếu user có đơn hàng DELIVERED cho sản phẩm này.
      */
     public boolean canReview(Long productId, Long userId) {
         if (userId == null) return false;
         EntityManager em = em();
         try {
-            // Tuỳ tên bảng Order: dùng [Order] để an toàn với từ khoá
-            String sql =
+            String sqlDelivered =
                 "SELECT COUNT(*) " +
                 "FROM Order_Item oi " +
                 "JOIN [Order] o ON o.order_id = oi.order_id " +
-                "WHERE o.user_id = :uid AND oi.product_id = :pid";
-            Number n = (Number) em.createNativeQuery(sql)
+                "WHERE o.user_id = :uid AND oi.product_id = :pid " +
+                "  AND o.status = 'DELIVERED'";
+            Number n = (Number) em.createNativeQuery(sqlDelivered)
                     .setParameter("uid", userId)
                     .setParameter("pid", productId)
                     .getSingleResult();
-            return n != null && n.longValue() > 0;
+            long delivered = (n == null) ? 0L : n.longValue();
+            return delivered > 0;
         } catch (Exception e) {
-            // Nếu schema khác (VD: bảng Orders), fallback: cho review nếu đã đăng nhập
-            return true;
+            // fail-close
+            return false;
         } finally {
             em.close();
         }
     }
 
-    /* ============================ WRITE ============================ */
+    /* ============================ WRITE (giữ nguyên method cũ) ============================ */
 
-    /** Tạo hoặc cập nhật review của user cho 1 product */
     public void saveOrUpdate(Long userId, Long productId, int rating,
                              String comment, String imageUrl, String videoUrl) {
+        rating = clamp(rating, 1, 5);
         EntityManager em = em();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
 
-            // Đã có review?
-            String sel = "SELECT review_id FROM Product_Review WHERE product_id = :pid AND user_id = :uid";
-            List<?> ids = em.createNativeQuery(sel)
-                    .setParameter("pid", productId)
+            // A) Kiểm tra đã có đơn DELIVERED cho sản phẩm chưa
+            Long oiDeliveredId = findLatestDeliveredOrderItemId(em, userId, productId);
+            if (oiDeliveredId == null) {
+                throw new IllegalStateException("not_delivered");
+            }
+
+            // B) Tìm tất cả review của (user, product) để xử lý 24h
+            String selAll =
+                "SELECT r.review_id, r.created_at " +
+                "FROM Product_Review r " +
+                "JOIN Order_Item oi ON oi.order_item_id = r.order_item_id " +
+                "WHERE r.user_id = :uid AND oi.product_id = :pid " +
+                "ORDER BY r.created_at DESC";
+            List<Object[]> rows = em.createNativeQuery(selAll)
                     .setParameter("uid", userId)
+                    .setParameter("pid", productId)
                     .getResultList();
 
-            LocalDateTime now = LocalDateTime.now();
+            if (rows != null && !rows.isEmpty()) {
+                // ĐÃ CÓ review trước đó → chỉ cho sửa nếu còn trong 24h
+                Object newestId = rows.get(0)[0];
+                LocalDateTime newestCreated = toLdt(rows.get(0)[1]);
+                if (newestCreated != null) {
+                    long hours = Duration.between(newestCreated, LocalDateTime.now()).toHours();
+                    if (hours >= 24) {
+                        throw new TooLateException();
+                    }
+                }
 
-            if (ids != null && !ids.isEmpty()) {
-                // UPDATE
                 String upd =
                     "UPDATE Product_Review " +
-                    "SET rating = :rating, comment_text = :comment, image_url = :img, video_url = :vid, created_at = :ts " +
-                    "WHERE product_id = :pid AND user_id = :uid";
+                    "SET rating = :rating, comment_text = :comment, image_url = :img, video_url = :vid " +
+                    "WHERE review_id = :rid";
                 em.createNativeQuery(upd)
                         .setParameter("rating", rating)
                         .setParameter("comment", safe(comment))
                         .setParameter("img", safe(imageUrl))
                         .setParameter("vid", safe(videoUrl))
-                        .setParameter("ts", Timestamp.valueOf(now))
-                        .setParameter("pid", productId)
-                        .setParameter("uid", userId)
+                        .setParameter("rid", newestId)
                         .executeUpdate();
+
+                // Xoá dư (nếu trước đây từng lỡ insert nhiều)
+                if (rows.size() > 1) {
+                    StringBuilder sb = new StringBuilder("DELETE FROM Product_Review WHERE review_id IN (");
+                    for (int i = 1; i < rows.size(); i++) {
+                        if (i > 1) sb.append(',');
+                        sb.append('?');
+                    }
+                    sb.append(')');
+                    var q = em.createNativeQuery(sb.toString());
+                    int p = 1;
+                    for (int i = 1; i < rows.size(); i++) q.setParameter(p++, rows.get(i)[0]);
+                    q.executeUpdate();
+                }
+
             } else {
-                // INSERT (order_item_id để null nếu bạn không truyền)
+                // CHƯA CÓ review → chèn mới dựa vào order_item DELIVERED mới nhất
+                LocalDateTime now = LocalDateTime.now();
                 String ins =
-                    "INSERT INTO Product_Review (product_id, user_id, rating, comment_text, image_url, video_url, created_at) " +
-                    "VALUES (:pid, :uid, :rating, :comment, :img, :vid, :ts)";
+                    "INSERT INTO Product_Review (order_item_id, user_id, rating, comment_text, image_url, video_url, created_at) " +
+                    "VALUES (:oiid, :uid, :rating, :comment, :img, :vid, :ts)";
                 em.createNativeQuery(ins)
-                        .setParameter("pid", productId)
+                        .setParameter("oiid", oiDeliveredId)
                         .setParameter("uid", userId)
                         .setParameter("rating", rating)
                         .setParameter("comment", safe(comment))
@@ -252,10 +282,12 @@ public class ReviewService {
                         .executeUpdate();
             }
 
-            // Cập nhật Product.rating_avg
+            // C) Cập nhật average product
             updateProductAverage(em, productId);
-
             tx.commit();
+        } catch (RuntimeException e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
             throw e;
@@ -264,23 +296,191 @@ public class ReviewService {
         }
     }
 
-    /** Xoá review của user cho product */
+    /* ============================ WRITE (NEW overload: nhiều ảnh + video) ============================ */
+
+    /**
+     * Overload cho phép lưu nhiều ảnh (Product_Review_Image) + video.
+     * - Ảnh đầu tiên sẽ set vào Product_Review.image_url để tương thích luồng cũ.
+     * - Luôn xóa & chèn lại bảng Product_Review_Image cho review mới nhất (nếu đang update).
+     */
+    public void saveOrUpdate(Long userId, Long productId, int rating,
+                             String comment, List<String> imageUrls, String videoUrl) {
+
+        rating = clamp(rating, 1, 5);
+
+        // Chuẩn hóa danh sách ảnh theo giới hạn/định dạng cơ bản
+        List<String> imgs = new ArrayList<>();
+        if (imageUrls != null) {
+            for (String u : imageUrls) {
+                String x = safe(u);
+                if (x != null && !x.isBlank()) {
+                    // cắt về 500 ký tự để khớp schema
+                    if (x.length() > URL_MAX_LEN) x = x.substring(0, URL_MAX_LEN);
+                    imgs.add(x);
+                }
+                if (imgs.size() >= MAX_IMAGES) break;
+            }
+        }
+        String firstImg = imgs.isEmpty() ? null : imgs.get(0);
+        String video = safe(videoUrl);
+        if (video != null && video.length() > URL_MAX_LEN) video = video.substring(0, URL_MAX_LEN);
+
+        EntityManager em = em();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+
+            // A) Kiểm tra đã có đơn DELIVERED cho sản phẩm chưa
+            Long oiDeliveredId = findLatestDeliveredOrderItemId(em, userId, productId);
+            if (oiDeliveredId == null) {
+                throw new IllegalStateException("not_delivered");
+            }
+
+            // B) Tìm tất cả review của (user, product)
+            String selAll =
+                "SELECT r.review_id, r.created_at " +
+                "FROM Product_Review r " +
+                "JOIN Order_Item oi ON oi.order_item_id = r.order_item_id " +
+                "WHERE r.user_id = :uid AND oi.product_id = :pid " +
+                "ORDER BY r.created_at DESC";
+            List<Object[]> rows = em.createNativeQuery(selAll)
+                    .setParameter("uid", userId)
+                    .setParameter("pid", productId)
+                    .getResultList();
+
+            Long targetReviewId;
+
+            if (rows != null && !rows.isEmpty()) {
+                // ĐÃ CÓ review → chỉ cho sửa trong 24h
+                Object newestId = rows.get(0)[0];
+                LocalDateTime newestCreated = toLdt(rows.get(0)[1]);
+                if (newestCreated != null) {
+                    long hours = Duration.between(newestCreated, LocalDateTime.now()).toHours();
+                    if (hours >= 24) {
+                        throw new TooLateException();
+                    }
+                }
+
+                String upd =
+                    "UPDATE Product_Review " +
+                    "SET rating = :rating, comment_text = :comment, image_url = :img, video_url = :vid " +
+                    "WHERE review_id = :rid";
+                em.createNativeQuery(upd)
+                        .setParameter("rating", rating)
+                        .setParameter("comment", safe(comment))
+                        .setParameter("img", firstImg)
+                        .setParameter("vid", video)
+                        .setParameter("rid", newestId)
+                        .executeUpdate();
+
+                targetReviewId = castLong(newestId);
+
+                // Xoá dư (nếu trước đây từng lỡ insert nhiều review)
+                if (rows.size() > 1) {
+                    StringBuilder sb = new StringBuilder("DELETE FROM Product_Review WHERE review_id IN (");
+                    for (int i = 1; i < rows.size(); i++) {
+                        if (i > 1) sb.append(',');
+                        sb.append('?');
+                    }
+                    sb.append(')');
+                    var q = em.createNativeQuery(sb.toString());
+                    int p = 1;
+                    for (int i = 1; i < rows.size(); i++) q.setParameter(p++, rows.get(i)[0]);
+                    q.executeUpdate();
+                }
+
+            } else {
+                // CHƯA CÓ review → chèn mới, lấy review_id vừa chèn
+                LocalDateTime now = LocalDateTime.now();
+                String ins =
+                    "INSERT INTO Product_Review " +
+                    " (order_item_id, user_id, rating, comment_text, image_url, video_url, created_at) " +
+                    "OUTPUT Inserted.review_id " +
+                    "VALUES (:oiid, :uid, :rating, :comment, :img, :vid, :ts)";
+                Object ridObj = em.createNativeQuery(ins)
+                        .setParameter("oiid", oiDeliveredId)
+                        .setParameter("uid", userId)
+                        .setParameter("rating", rating)
+                        .setParameter("comment", safe(comment))
+                        .setParameter("img", firstImg)
+                        .setParameter("vid", video)
+                        .setParameter("ts", Timestamp.valueOf(now))
+                        .getSingleResult();
+                targetReviewId = castLong(ridObj);
+            }
+
+            // C) Đồng bộ bảng Product_Review_Image (xoá & chèn lại)
+            if (targetReviewId != null) {
+                String delImgs = "DELETE FROM Product_Review_Image WHERE review_id = :rid";
+                em.createNativeQuery(delImgs)
+                        .setParameter("rid", targetReviewId)
+                        .executeUpdate();
+
+                if (!imgs.isEmpty()) {
+                    String insImg = "INSERT INTO Product_Review_Image (image_url, sort_order, review_id) " +
+                                    "VALUES (:url, :ord, :rid)";
+                    int order = 1;
+                    for (String url : imgs) {
+                        em.createNativeQuery(insImg)
+                                .setParameter("url", url)
+                                .setParameter("ord", order++)
+                                .setParameter("rid", targetReviewId)
+                                .executeUpdate();
+                    }
+                }
+            }
+
+            // D) Cập nhật average product
+            updateProductAverage(em, productId);
+            tx.commit();
+        } catch (RuntimeException e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
+
     public void deleteByUser(Long userId, Long productId) {
         EntityManager em = em();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
 
-            String del = "DELETE FROM Product_Review WHERE product_id = :pid AND user_id = :uid";
-            em.createNativeQuery(del)
-                    .setParameter("pid", productId)
+            String sel =
+                "SELECT TOP 1 r.review_id, r.created_at " +
+                "FROM Product_Review r " +
+                "JOIN Order_Item oi ON oi.order_item_id = r.order_item_id " +
+                "WHERE r.user_id = :uid AND oi.product_id = :pid " +
+                "ORDER BY r.created_at DESC";
+            List<Object[]> rows = em.createNativeQuery(sel)
                     .setParameter("uid", userId)
-                    .executeUpdate();
+                    .setParameter("pid", productId)
+                    .getResultList();
 
-            // cập nhật lại average
+            if (rows != null && !rows.isEmpty()) {
+                Object rid = rows.get(0)[0];
+                LocalDateTime created = toLdt(rows.get(0)[1]);
+                if (created != null) {
+                    long hrs = Duration.between(created, LocalDateTime.now()).toHours();
+                    if (hrs >= 24) throw new TooLateException();
+                }
+                // NEW: xóa ảnh con trước
+                String delChild = "DELETE FROM Product_Review_Image WHERE review_id = :rid";
+                em.createNativeQuery(delChild).setParameter("rid", rid).executeUpdate();
+
+                String del = "DELETE FROM Product_Review WHERE review_id = :rid";
+                em.createNativeQuery(del).setParameter("rid", rid).executeUpdate();
+            }
+
             updateProductAverage(em, productId);
-
             tx.commit();
+        } catch (RuntimeException e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
             throw e;
@@ -291,10 +491,36 @@ public class ReviewService {
 
     /* ============================ Helpers ============================ */
 
+    private Long findLatestDeliveredOrderItemId(EntityManager em, Long userId, Long productId) {
+        String findOi =
+            "SELECT TOP 1 oi.order_item_id " +
+            "FROM Order_Item oi " +
+            "JOIN [Order] o ON o.order_id = oi.order_id " +
+            "WHERE o.user_id = :uid AND oi.product_id = :pid " +
+            "  AND o.status = 'DELIVERED' " +
+            "ORDER BY o.created_at DESC";
+        List<?> oiIds = em.createNativeQuery(findOi)
+                .setParameter("uid", userId)
+                .setParameter("pid", productId)
+                .getResultList();
+        return (oiIds == null || oiIds.isEmpty()) ? null : castLong(oiIds.get(0));
+    }
+
+    private static Long castLong(Object o) {
+        if (o == null) return null;
+        if (o instanceof Number) return ((Number) o).longValue();
+        try { return Long.valueOf(String.valueOf(o)); } catch (Exception e){ return null; }
+    }
+
     private void updateProductAverage(EntityManager em, Long productId) {
         String upd =
-            "UPDATE Product " +
-            "SET rating_avg = (SELECT COALESCE(AVG(CAST(r.rating AS FLOAT)), 0.0) FROM Product_Review r WHERE r.product_id = :pid) " +
+            "UPDATE [Product] " +
+            "SET rating_avg = (" +
+            "  SELECT CAST(COALESCE(AVG(CAST(r.rating AS FLOAT)), 0.0) AS DECIMAL(3,2)) " +
+            "  FROM Product_Review r " +
+            "  JOIN Order_Item oi ON oi.order_item_id = r.order_item_id " +
+            "  WHERE oi.product_id = :pid" +
+            ") " +
             "WHERE product_id = :pid";
         em.createNativeQuery(upd)
                 .setParameter("pid", productId)
@@ -321,13 +547,20 @@ public class ReviewService {
             return null;
         }
     }
-    
-    /** Làm tròn half-up (chuẩn) đến số chữ số thập phân nhất định */
+
     private static double roundHalfUp(double value, int scale) {
         if (Double.isNaN(value)) return 0.0;
-        double pow = Math.pow(10, scale);
-        return Math.round(value * pow) / pow;
+        try {
+            return new BigDecimal(value).setScale(scale, RoundingMode.HALF_UP).doubleValue();
+        } catch (Exception ignore) {
+            double pow = Math.pow(10, scale);
+            return Math.round(value * pow) / pow;
+        }
     }
-    
-    
+
+    private static int clamp(int v, int lo, int hi) {
+        if (v < lo) return lo;
+        if (v > hi) return hi;
+        return v;
+    }
 }

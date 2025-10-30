@@ -22,6 +22,7 @@ vn\iotstar\services\FavoriteService.class
 vn\iotstar\entities\Voucher$VoucherType.class
 vn\iotstar\entities\Order.class
 vn\iotstar\services\AuthService.class
+vn\iotstar\entities\ProductReviewImage$ProductReviewImageBuilder.class
 vn\iotstar\controllers\vendor\VendorProductServlet.class
 vn\iotstar\entities\CartItem$CartItemBuilder.class
 vn\iotstar\entities\VoucherProductId$VoucherProductIdBuilder.class
@@ -114,6 +115,7 @@ vn\iotstar\entities\UserOtp$UserOtpBuilder.class
 vn\iotstar\controllers\vendor\VendorVoucherListServlet.class
 vn\iotstar\utils\AuthFilter.class
 vn\iotstar\services\CommentService$CommentItem.class
+vn\iotstar\services\ReviewService$TooLateException.class
 vn\iotstar\configs\VnPayConfig.class
 vn\iotstar\entities\Shipper$ShipperBuilder.class
 vn\iotstar\services\ProductBrowseService$PageResult.class
@@ -173,6 +175,7 @@ vn\iotstar\entities\ProductComment.class
 vn\iotstar\entities\ShippingPartner.class
 vn\iotstar\entities\ProductImage$ProductImageBuilder.class
 vn\iotstar\DAO\Impl\CategoryDaoImpl.class
+vn\iotstar\utils\SessionGuardFilter.class
 vn\iotstar\controllers\vendor\ShoeAttributeServlet.class
 vn\iotstar\DAO\Impl\ProductDaoImpl.class
 vn\iotstar\entities\Cart$CartBuilder.class
@@ -187,6 +190,7 @@ vn\iotstar\controllers\admin\AdminCouponController.class
 vn\iotstar\services\ShoeAttributeService.class
 vn\iotstar\controllers\admin\AdminPromotionController.class
 vn\iotstar\DAO\ICategoryDao.class
+vn\iotstar\entities\ProductReviewImage.class
 vn\iotstar\controllers\order\CartServlet.class
 vn\iotstar\entities\OrderItem$OrderItemBuilder.class
 vn\iotstar\entities\User.class

@@ -20,6 +20,7 @@ import java.util.List;
  *  - GET  /comment/thread  : trả về JSON cây bình luận (threaded) cho 1 sản phẩm
  *  - POST /comment/add     : thêm bình luận cho sản phẩm (hỗ trợ reply qua parentId)
  *  - POST /comment/delete  : xoá 1 bình luận (ràng buộc đúng user & <24h)
+ *  - POST /comment/reply   : thêm trả lời (reply) cho 1 bình luận (parent)
  */
 @WebServlet(name = "CommentServlet", urlPatterns = {"/comment/*"})
 public class CommentServlet extends HttpServlet {
@@ -51,7 +52,7 @@ public class CommentServlet extends HttpServlet {
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
 
-        String path = req.getPathInfo(); // "/add" hoặc "/delete"
+        String path = req.getPathInfo(); // "/add" hoặc "/delete" hoặc "/reply"
         if (path == null) path = "";
 
         switch (path) {
@@ -60,6 +61,9 @@ public class CommentServlet extends HttpServlet {
                 break;
             case "/delete":
                 handleDelete(req, resp);
+                break;
+            case "/reply":
+                handleReply(req, resp); // <-- mới thêm
                 break;
             default:
                 sendError(req, resp, HttpServletResponse.SC_NOT_FOUND,
@@ -238,6 +242,80 @@ public class CommentServlet extends HttpServlet {
                         ? (ctx + "/product/" + productId + "?cm_del=err")
                         : (ctx + "/products?cm_del=err");
                 resp.sendRedirect(back);
+            }
+        }
+    }
+
+    /* ================== /comment/reply (POST) ================== */
+    private void handleReply(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        HttpSession session = req.getSession(false);
+        Long userId = extractUserIdFromSession(session);
+        // UI gửi parentCommentId; hỗ trợ cả parentId để tương thích
+        Long parentId = parseLongObj(req.getParameter("parentCommentId"));
+        if (parentId == null) parentId = parseLongObj(req.getParameter("parentId"));
+        Long productId = parseLongObj(req.getParameter("productId"));
+        String ctx = req.getContextPath();
+
+        if (userId == null) {
+            if (wantsJson(req)) {
+                json(resp, 401, "{\"ok\":false,\"error\":\"unauthenticated\"}");
+            } else {
+                resp.sendRedirect(ctx + "/login");
+            }
+            return;
+        }
+        if (productId == null || parentId == null) {
+            sendError(req, resp, HttpServletResponse.SC_BAD_REQUEST,
+                    "productId/parentId is required", productId);
+            return;
+        }
+
+        String content = req.getParameter("content");
+        content = (content == null) ? "" : content.trim();
+        if (content.length() > 500) content = content.substring(0, 500);
+        if (content.isBlank()) {
+            if (wantsJson(req)) {
+                json(resp, 400, "{\"ok\":false,\"error\":\"empty_content\"}");
+            } else {
+                resp.sendRedirect(ctx + "/product/" + productId + "?cm_rep=empty");
+            }
+            return;
+        }
+
+        try {
+            CommentService svc = new CommentService();
+            int affected = svc.addReply(userId, productId, parentId, content);
+            if (affected <= 0) {
+                if (wantsJson(req)) {
+                    json(resp, 400, "{\"ok\":false,\"error\":\"invalid_parent\"}");
+                } else {
+                    resp.sendRedirect(ctx + "/product/" + productId + "?cm_rep=parent_invalid");
+                }
+                return;
+            }
+
+            if (wantsJson(req)) {
+                String userName = extractUserNameFromSession(session);
+                if (userName == null || userName.isBlank()) userName = "Bạn";
+                String createdAt = LocalDateTime.now().format(HUMAN_FMT);
+
+                String body = "{"
+                        + "\"ok\":true,"
+                        + "\"userName\":\"" + esc(userName) + "\","
+                        + "\"createdAt\":\"" + esc(createdAt) + "\","
+                        + "\"content\":\"" + esc(content) + "\","
+                        + "\"parentId\":" + parentId
+                        + "}";
+                json(resp, 200, body);
+            } else {
+                resp.sendRedirect(ctx + "/product/" + productId + "?cm_rep=ok");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (wantsJson(req)) {
+                json(resp, 500, "{\"ok\":false,\"error\":\"server_error\"}");
+            } else {
+                resp.sendRedirect(ctx + "/product/" + productId + "?cm_rep=err");
             }
         }
     }

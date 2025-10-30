@@ -20,13 +20,17 @@ https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
 		<class>vn.iotstar.entities.UserOtp</class>
 		<class>vn.iotstar.entities.Coupon</class>
 		<class>vn.iotstar.entities.Promotion</class>
+		
 		<class>vn.iotstar.entities.ViewedProduct</class>
 		<class>vn.iotstar.entities.Favorite</class>
+		
 		<class>vn.iotstar.entities.ProductComment</class>
+		<class>vn.iotstar.entities.ProductReview</class>
+		<class>vn.iotstar.entities.ProductReviewImage</class>
+
 		<class>vn.iotstar.entities.Voucher</class>
 		<class>vn.iotstar.entities.VoucherProduct</class>
 
-		<!-- ✅ THÊM MỚI -->
 		<class>vn.iotstar.entities.ProductVariant</class>
 		<class>vn.iotstar.entities.ShoeAttribute</class>
 

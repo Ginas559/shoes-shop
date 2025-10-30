@@ -54,10 +54,15 @@ public class LoginServlet extends HttpServlet {
 
             // Lưu session để tương thích phần cũ (fallback cho staff, hoặc nơi khác còn dùng session)
             HttpSession session = req.getSession(true);
-            session.setAttribute("currentUser", u);
-            session.setAttribute("userId", u.getId());
+
+            // --- 🟢 Đồng nhất key session trên toàn hệ thống ---
+            session.setAttribute("authUser", u);        // tên chuẩn để các servlet khác dùng
+            session.setAttribute("currentUser", u);     // giữ nguyên key cũ để không lỗi chỗ khác
+            session.setAttribute("user", u);            // bổ sung cho JSP hoặc filter dùng key "user"
+            session.setAttribute("userId", u.getId());  // key số nguyên dùng ở OrderServlet
             session.setAttribute("email", u.getEmail());
             session.setAttribute("role", u.getRole().name()); // USER | ADMIN | VENDOR | SHIPPER
+            // ---------------------------------------------------
 
             // Hỗ trợ staff: nếu user thuộc 1 shop, set staffShopId để whitelist các trang staff
             if (u.getStaffShop() != null) {
