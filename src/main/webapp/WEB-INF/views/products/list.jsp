@@ -32,25 +32,118 @@
 	value="${empty province ? param.province : province}" />
 
 <div class="product-list-simple">
+
+	<%-- HERO SHOP (hiện khi lọc theo 1 shop cụ thể) --%>
+	<c:if test="${not empty shop}">
+		<c:set var="coverRaw"
+			value="${empty shop.coverUrl ? '' : shop.coverUrl}" />
+		<c:set var="logoRaw"
+			value="${empty shop.logoUrl  ? '' : shop.logoUrl }" />
+
+		<%-- resolve cover --%>
+		<c:choose>
+			<c:when
+				test="${fn:startsWith(coverRaw,'http://') or fn:startsWith(coverRaw,'https://')}">
+				<c:set var="resolvedCover" value="${coverRaw}" />
+			</c:when>
+			<c:when test="${fn:startsWith(coverRaw,'/assets/')}">
+				<c:set var="resolvedCover" value="${ctx.concat(coverRaw)}" />
+			</c:when>
+			<c:when test="${fn:startsWith(coverRaw,'/')}">
+				<c:set var="resolvedCover" value="${coverRaw}" />
+			</c:when>
+			<c:otherwise>
+				<c:set var="resolvedCover"
+					value="${ctx.concat('/assets/img/').concat(coverRaw)}" />
+			</c:otherwise>
+		</c:choose>
+
+		<%-- resolve logo --%>
+		<c:choose>
+			<c:when
+				test="${fn:startsWith(logoRaw,'http://') or fn:startsWith(logoRaw,'https://')}">
+				<c:set var="resolvedLogo" value="${logoRaw}" />
+			</c:when>
+			<c:when test="${fn:startsWith(logoRaw,'/assets/')}">
+				<c:set var="resolvedLogo" value="${ctx.concat(logoRaw)}" />
+			</c:when>
+			<c:when test="${fn:startsWith(logoRaw,'/')}">
+				<c:set var="resolvedLogo" value="${logoRaw}" />
+			</c:when>
+			<c:otherwise>
+				<c:set var="resolvedLogo"
+					value="${ctx.concat('/assets/img/').concat(logoRaw)}" />
+			</c:otherwise>
+		</c:choose>
+
+		<style>
+.shop-header {
+	position: relative;
+	border-radius: .75rem;
+	overflow: hidden;
+	background: #f8f9fa
+}
+
+.shop-cover {
+	width: 100%;
+	aspect-ratio: 16/5;
+	object-fit: cover;
+	opacity: .9;
+	display: block
+}
+
+.shop-header-content {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(to bottom, rgba(0, 0, 0, .2),
+		rgba(0, 0, 0, .45));
+	text-align: center;
+	padding: 1rem
+}
+
+.shop-logo {
+	width: 88px;
+	height: 88px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 3px solid #fff;
+	background: #fff;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, .25)
+}
+
+.shop-title {
+	margin-top: .75rem;
+	color: #fff;
+	letter-spacing: .08em;
+	text-shadow: 0 2px 8px rgba(0, 0, 0, .35)
+}
+</style>
+
+		<div class="shop-header mb-4">
+			<img class="shop-cover"
+				src="${empty resolvedCover ? (ctx.concat('/assets/img/placeholder.png')) : resolvedCover}"
+				alt="${shop.shopName}"
+				onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
+			<div class="shop-header-content">
+				<img class="shop-logo"
+					src="${empty resolvedLogo ? (ctx.concat('/assets/img/placeholder.png')) : resolvedLogo}"
+					alt="${shop.shopName}"
+					onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
+				<h1 class="h4 fw-bold shop-title">WELCOME SHOP ${shop.shopName}</h1>
+			</div>
+		</div>
+	</c:if>
+
+
 	
-	<%-- 
-	  =============================================================
-	  (FIX V21) THAY ĐỔI TIÊU ĐỀ TRANG + THÊM LOGO VÀ ẢNH BÌA
-	  =============================================================
-	--%>
-	<div class="shop-header mb-4">
-	    <img src="https://wallpaperaccess.com/full/4175212.jpg" alt="Shop Cover" class="shop-cover">
-	    <div class="shop-header-content">
-	        <img src="https://th.bing.com/th/id/R.70d7138ed250b7690cd2c2de15089650?rik=mzwmr91CB%2bP6wA&riu=http%3a%2f%2f2.bp.blogspot.com%2f-luciOJPHTOs%2fUP9GH1APOrI%2fAAAAAAAACP8%2fCv-zPf0_IdY%2fs1600%2fManchester%2bUnited%2bLogo%2bHD%2bWallpaper_2.jpg&ehk=1qwI8qKjxfpETscg9y9rSoPBah3%2boLA10urX00yY8jM%3d&risl=&pid=ImgRaw&r=0" 
-	             alt="Shop Logo" class="shop-logo">
-	        <h1 class="h3 fw-bolder text-center letter-spacing-2 mt-2 mb-0">
-	            <span class="text-gradient">WELCOME SHOP GIÀY THÀNH MAN</span>
-	        </h1>
-	    </div>
-	</div>
 
 	<%-- ĐÃ THÊM: class "filter-card-simple" (thay cho "lỏ") --%>
-	<form class="row g-2 mb-3 filter-card-simple" method="get" action="" id="filterForm">
+	<form class="row g-2 mb-3 filter-card-simple" method="get" action=""
+		id="filterForm">
 		<div class="col-12 col-md-4">
 			<input class="form-control" name="q" value="${param.q}"
 				placeholder="Tìm kiếm...">
@@ -81,11 +174,12 @@
 		<%-- Gộp Giá từ + Giá đến thành một nhóm nằm cùng hàng --%>
 		<div class="col-12 col-md-4">
 			<div class="input-group">
-				<span class="input-group-text">Giá</span> <input class="form-control"
-					type="number" min="0" name="minPrice" value="${param.minPrice}"
-					placeholder="Từ"> <span class="input-group-text">→</span> <input
-					class="form-control" type="number" min="0" name="maxPrice"
-					value="${param.maxPrice}" placeholder="Đến">
+				<span class="input-group-text">Giá</span> <input
+					class="form-control" type="number" min="0" name="minPrice"
+					value="${param.minPrice}" placeholder="Từ"> <span
+					class="input-group-text">→</span> <input class="form-control"
+					type="number" min="0" name="maxPrice" value="${param.maxPrice}"
+					placeholder="Đến">
 			</div>
 		</div>
 
@@ -104,10 +198,10 @@
 				<option value="">Sắp xếp</option>
 				<option value="new_desc" ${param.sort=='new_desc' ? 'selected' : ''}>Mới
 					nhất</option>
-				<option value="price_asc" ${param.sort=='price_asc' ? 'selected' : ''}>Giá
-					↑</option>
-				<option value="price_desc" ${param.sort=='price_desc' ? 'selected' : ''}>Giá
-					↓</option>
+				<option value="price_asc"
+					${param.sort=='price_asc' ? 'selected' : ''}>Giá ↑</option>
+				<option value="price_desc"
+					${param.sort=='price_desc' ? 'selected' : ''}>Giá ↓</option>
 				<option value="rating_desc"
 					${param.sort=='rating_desc' ? 'selected' : ''}>Đánh giá ↓</option>
 			</select>
@@ -148,8 +242,8 @@
 		<div class="col-12 col-md-auto d-flex gap-2">
 			<%-- ĐÃ THÊM: class "btn-gradient" (từ v13) --%>
 			<button class="btn btn-gradient">Lọc</button>
-			<a class="btn btn-outline-secondary" href="<c:url value='/products'/>">Xóa
-				lọc</a>
+			<a class="btn btn-outline-secondary"
+				href="<c:url value='/products'/>">Xóa lọc</a>
 		</div>
 	</form>
 
@@ -194,9 +288,7 @@
 										<c:set var="resolvedCover"
 											value="${ctx.concat('/assets/products/').concat(coverFixed)}" />
 									</c:otherwise>
-								</c:choose> 
-								
-								<%-- (FIX V21) ĐÃ XÓA style="aspect-ratio: 3 / 4;" vì sẽ set cho cả card --%>
+								</c:choose> <%-- (FIX V21) ĐÃ XÓA style="aspect-ratio: 3 / 4;" vì sẽ set cho cả card --%>
 								<img class="card-img-top"
 								src="${empty resolvedCover ? (ctx.concat('/assets/img/placeholder.png')) : resolvedCover}"
 								alt="${p.name}"
@@ -279,11 +371,10 @@
 											</c:when>
 											<c:when test="${not empty p.price}">
 												<%-- ĐÃ THÊM: class "price-normal" --%>
-												<span class="price-normal">
-													<fmt:formatNumber value="${p.price}" type="number"
-													groupingUsed="true" /> ₫
+												<span class="price-normal"> <fmt:formatNumber
+														value="${p.price}" type="number" groupingUsed="true" /> ₫
 												</span>
-	                    					</c:when>
+											</c:when>
 											<c:otherwise>—</c:otherwise>
 										</c:choose>
 									</div>
@@ -294,10 +385,12 @@
 											<%-- ĐÃ THÊM: Dùng icon "Pro" (từ v13) --%>
 											<c:choose>
 												<c:when test="${i <= rAvg}">
-													<span class="text-warning"><i class="bi bi-star-fill"></i></span>
+													<span class="text-warning"><i
+														class="bi bi-star-fill"></i></span>
 												</c:when>
 												<c:otherwise>
-													<span class="text-secondary opacity-50"><i class="bi bi-star"></i></span>
+													<span class="text-secondary opacity-50"><i
+														class="bi bi-star"></i></span>
 												</c:otherwise>
 											</c:choose>
 										</c:forEach>
@@ -391,55 +484,69 @@
 
 		<c:otherwise>
 			<%-- ĐÃ THÊM: class "empty-results-card-simple" --%>
-			<div class="text-center text-muted py-5 empty-results-card-simple">Chưa có sản phẩm để
-				hiển thị.</div>
+			<div class="text-center text-muted py-5 empty-results-card-simple">Chưa
+				có sản phẩm để hiển thị.</div>
 		</c:otherwise>
 	</c:choose>
-</div> <%-- End .product-list-simple --%>
+</div>
+<%-- End .product-list-simple --%>
 
 <script>
-  (function () {
-    var form   = document.getElementById('filterForm');
-    var input  = document.querySelector('input[name="shopQ"]');
-    var hidden = document.getElementById('shopIdInput');
-    var list   = document.getElementById('shopList');
-    if (!form || !input || !hidden || !list) return;
+	(function() {
+		var form = document.getElementById('filterForm');
+		var input = document.querySelector('input[name="shopQ"]');
+		var hidden = document.getElementById('shopIdInput');
+		var list = document.getElementById('shopList');
+		if (!form || !input || !hidden || !list)
+			return;
 
-    function stripVN(s) {
-      return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    }
-    function norm(s) {
-      return stripVN(s).trim().toLowerCase().replace(/\s+/g, ' ');
-    }
+		function stripVN(s) {
+			return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+		}
+		function norm(s) {
+			return stripVN(s).trim().toLowerCase().replace(/\s+/g, ' ');
+		}
 
-    function sync() {
-      var nv = norm(input.value);
-      var id = '';
-      var opts = list.querySelectorAll('option');
+		function sync() {
+			var nv = norm(input.value);
+			var id = '';
+			var opts = list.querySelectorAll('option');
 
-      if (nv) {
-        for (var i = 0; i < opts.length; i++) {
-          if (norm(opts[i].value) === nv) { id = opts[i].dataset.id || ''; break; }
-        }
-        if (!id) {
-          var candidates = [];
-          for (var j = 0; j < opts.length; j++) {
-            if (norm(opts[j].value).indexOf(nv) === 0) candidates.push(opts[j]);
-          }
-          if (candidates.length === 1) id = candidates[0].dataset.id || '';
-        }
-      }
-      hidden.value = id;
-    }
+			if (nv) {
+				for (var i = 0; i < opts.length; i++) {
+					if (norm(opts[i].value) === nv) {
+						id = opts[i].dataset.id || '';
+						break;
+					}
+				}
+				if (!id) {
+					var candidates = [];
+					for (var j = 0; j < opts.length; j++) {
+						if (norm(opts[j].value).indexOf(nv) === 0)
+							candidates.push(opts[j]);
+					}
+					if (candidates.length === 1)
+						id = candidates[0].dataset.id || '';
+				}
+			}
+			hidden.value = id;
+		}
 
-    input.addEventListener('input', function(){
-      if (!input.value) hidden.value = '';
-      else sync();
-    });
-    input.addEventListener('change', sync);
-    input.addEventListener('blur', sync);
-    input.addEventListener('keydown', function(e){ if (e.key === 'Enter') sync(); });
-    form.addEventListener('submit', function(){ sync(); }, true);
-    sync();
-  })();
+		input.addEventListener('input', function() {
+			if (!input.value)
+				hidden.value = '';
+			else
+				sync();
+		});
+		input.addEventListener('change', sync);
+		input.addEventListener('blur', sync);
+		input.addEventListener('keydown', function(e) {
+			if (e.key === 'Enter')
+				sync();
+		});
+		form.addEventListener('submit', function() {
+			sync();
+		}, true);
+		sync();
+	})();
 </script>

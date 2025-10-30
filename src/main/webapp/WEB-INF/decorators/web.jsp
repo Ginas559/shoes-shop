@@ -28,7 +28,7 @@
 	</div>
 
 	<div class="floating-wings-right">
-		<img src="https://res.cloudinary.com/dwzvtnip3/image/upload/v1761811464/shoes-shop/products/ifbe3jmsu3gxbtqo6jra.jpg" alt="float 4" />
+		<img src="https://agiay.vn/wp-content/uploads/2023/05/dep-nam-hot-ag0275-768x768.jpg" alt="float 4" />
 		<img src="https://static.nc-myus.com/images/pub/www/uploads/image/26eb4dfc4ab74dc6863e2b3ce05e01de/How_to_Shop_Puma_and_Ship_Internationally.jpg" alt="Puma shop" /> <%-- 👈 Thêm ảnh Puma khác vào cánh phải --%>
 		<img src="https://w7.pngwing.com/pngs/902/804/png-transparent-cr7-hd-logo-thumbnail.png" alt="CR7 Logo" /> <%-- 👈 Thêm ảnh CR7 vào cánh phải --%>
 		<img src="https://res.cloudinary.com/dwzvtnip3/image/upload/v1761833266/shoes-shop/products/cjsmdftzijebdwndluha.png" alt="float 5" />

@@ -1,3 +1,4 @@
+<%-- filepath: src/main/webapp/WEB-INF/views/public/product-detail.jsp --%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions"%>
@@ -5,128 +6,13 @@
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 <fmt:setLocale value="vi_VN" scope="page" />
 
-<style>
-/* Giữ nguyên phần CSS */
-.product-detail .main-img {
-	width: 100%;
-	max-width: 640px;
-	aspect-ratio: 1/1;
-	object-fit: cover
-}
-
-.product-detail .thumb {
-	width: 96px;
-	height: 96px;
-	object-fit: cover;
-	cursor: pointer
-}
-
-@media ( max-width :576px) {
-	.product-detail .main-img {
-		max-width: 100%
-	}
-	.product-detail .thumb {
-		width: 72px;
-		height: 72px
-	}
-}
-
-.card:hover {
-	transform: translateY(-2px);
-	transition: transform .15s ease
-}
-
-.fav-wrap {
-	display: flex;
-	align-items: center;
-	gap: .5rem;
-	margin-top: .5rem
-}
-
-.fav-wrap .btn {
-	line-height: 1.1
-}
-
-.stars {
-	color: #f59e0b
-}
-
-.star-btn {
-	cursor: pointer;
-	font-size: 1.25rem;
-	line-height: 1
-}
-
-.star-btn.inactive {
-	color: #ddd
-}
-
-.rv-item {
-	border-bottom: 1px solid #eee;
-	padding: 12px 0
-}
-
-.rv-meta {
-	font-size: .9rem;
-	color: #666
-}
-
-.rv-media img, .rv-media video {
-	max-width: 160px;
-	max-height: 160px;
-	border-radius: 8px;
-	object-fit: cover
-}
-
-.cm-item {
-	border-bottom: 1px dashed #eee;
-	padding: 10px 0
-}
-
-.cm-row {
-	padding: 10px 0;
-	border-bottom: 1px dashed #eee
-}
-
-.cm-head {
-	display: flex;
-	align-items: center;
-	gap: .5rem
-}
-
-.cm-meta {
-	color: #6c757d;
-	font-size: .875rem
-}
-
-.cm-actions {
-	display: flex;
-	gap: .5rem;
-	margin-top: .25rem
-}
-
-.cm-actions .btn-link {
-	padding: 0;
-	font-size: .875rem;
-	text-decoration: none
-}
-
-.cm-indent {
-	border-left: 2px solid #f1f1f1;
-	padding-left: 10px
-}
-
-.cm-reply-form {
-	margin-top: .5rem
-}
-
-.cm-reply-form textarea {
-	resize: vertical
-}
-</style>
+<div class="main-product-detail py-4">
 
 <c:choose>
 	<c:when test="${not empty product}">
+	
+		<div class="card kpi-card product-detail-card mb-4">
+		<div class="card-body">
 		<div class="row g-3 product-detail">
 			<div class="col-12 col-md-6">
 				<%-- resolve main image (HEAD) --%>
@@ -150,14 +36,16 @@
 					</c:otherwise>
 				</c:choose>
 
-				<img id="mainImage"
-					class="img-fluid rounded border d-block mx-auto main-img"
-					src="${empty resolvedMain ? (ctx.concat('/assets/img/placeholder.png')) : resolvedMain}"
-					alt="<c:out value='${product.productName}'/>"
-					onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
+				<div class="main-image-glow">
+					<img id="mainImage"
+						class="img-fluid rounded border d-block mx-auto main-img"
+						src="${empty resolvedMain ? (ctx.concat('/assets/img/placeholder.png')) : resolvedMain}"
+						alt="<c:out value='${product.productName}'/>"
+						onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
+				</div>
 
 				<c:if test="${not empty images}">
-					<div class="d-flex gap-2 mt-2 flex-wrap">
+					<div class="d-flex gap-2 mt-2 flex-wrap thumb-gallery">
 						<c:forEach var="img" items="${images}" varStatus="st">
 							<%-- Resolve each thumb (HEAD) --%>
 							<c:set var="tRaw" value="${empty img ? '' : img}" />
@@ -183,7 +71,7 @@
 							<img
 								src="${empty resolvedThumb ? (ctx.concat('/assets/img/placeholder.png')) : resolvedThumb}"
 								data-src="${empty resolvedThumb ? (ctx.concat('/assets/img/placeholder.png')) : resolvedThumb}"
-								class="rounded ${st.first ? 'border border-primary' : 'border'} thumb"
+								class="rounded ${st.first ? 'active' : ''} thumb"
 								onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
 						</c:forEach>
 					</div>
@@ -191,15 +79,17 @@
 			</div>
 
 			<div class="col-12 col-md-6">
-				<h1 class="h5">
+				<h1 class="h5 gradient-text">
 					<c:out value="${product.productName}" />
 				</h1>
 
 				<%-- HIỂN THỊ THÔNG TIN SHOP --%>
 				<c:if test="${not empty product.shop}">
-					<div class="d-flex align-items-center gap-2 mb-2">
+					<div class="shop-info-box card kpi-card mb-3">
+					<div class="card-body">
+					<div class="d-flex align-items-center gap-2">
 						<c:if test="${not empty product.shop.logoUrl}">
-							<%-- Resolve logo theo rule: http(s) -> giữ nguyên; /assets -> ctx+; / -> giữ; còn lại -> prefix về /assets/img/shops/ (HEAD) --%>
+							<%-- Resolve logo --%>
 							<c:set var="logoRaw" value="${product.shop.logoUrl}" />
 							<c:set var="logoFixed"
 								value="${fn:replace(logoRaw, '/assset/', '/assets/')}" />
@@ -219,12 +109,10 @@
 										value="${ctx.concat('/assets/img/shops/').concat(logoFixed)}" />
 								</c:otherwise>
 							</c:choose>
-
 							<img
 								src="${empty resolvedLogo ? (ctx.concat('/assets/img/placeholder.png')) : resolvedLogo}"
 								alt="<c:out value='${product.shop.shopName}'/>"
-								class="rounded border"
-								style="width: 172px; height: 172px; object-fit: cover"
+								class="rounded border shop-logo-small"
 								onerror="this.onerror=null;this.src='${ctx}/assets/img/placeholder.png';">
 						</c:if>
 
@@ -235,10 +123,12 @@
 								class="badge bg-secondary-subtle border text-secondary text-decoration-none"
 								href="<c:url value='/products'><c:param name='shopId' value='${product.shop.shopId}'/></c:url>">
 								<c:out value="${product.shop.shopName}" />
-							</a> <a href="${ctx}/chat/public?shopId=${product.shop.shopId}"
-								class="btn btn-outline-primary"> 💬 Chat công khai với cửa
-								hàng </a>
+							</a> 
+							<a href="${ctx}/chat/public?shopId=${product.shop.shopId}"
+								class="btn btn-sm btn-chat d-block mt-2"> 💬 Chat công khai</a>
 						</div>
+					</div>
+					</div>
 					</div>
 				</c:if>
 
@@ -250,7 +140,7 @@
 				<%-- ======= GIÁ CHÍNH: format VNĐ + rút gọn k/triệu (HEAD + 6ed02d8) ======= --%>
 				<c:set var="priceMain"
 					value="${not empty product.discountPrice ? product.discountPrice : product.price}" />
-				<div class="fs-4 fw-bold">
+				<div class="fs-4 fw-bold gradient-text">
 					<fmt:formatNumber value="${priceMain}" type="number"
 						maxFractionDigits="0" />
 					₫ <span class="text-muted small"> ( <c:choose>
@@ -272,7 +162,7 @@
 					value="${empty favoriteCount ? 0 : favoriteCount}" />
 				<div class="fav-wrap">
 					<button id="btn-fav" type="button"
-						class="btn btn-outline-danger btn-sm"
+						class="btn btn-outline-danger btn-sm btn-fav-pulse"
 						data-product="${product.productId}" aria-pressed="${isFavSafe}">
 						<span id="fav-icon">${isFavSafe ? '❤️' : '🤍'}</span> <span
 							id="fav-text">${isFavSafe ? 'Đã thích' : 'Thêm Yêu thích'}</span>
@@ -283,7 +173,7 @@
 
 				<%-- Thêm khối THUỘC TÍNH SẢN PHẨM (từ HEAD) --%>
 				<c:if test="${not empty attrs}">
-					<div class="mt-3 border rounded p-3">
+					<div class="mt-3 border rounded p-3 attribute-box">
 						<div class="fw-semibold mb-2">Thuộc tính sản phẩm</div>
 						<div class="row g-2 small">
 							<c:if test="${not empty attrs.brand}">
@@ -316,9 +206,8 @@
 
 				<%-- Thêm khối CHỌN BIẾN THỂ (từ HEAD, sử dụng JS động) --%>
 				<c:if test="${not empty colorGroups and not empty variantIdByKey}">
-					<div class="mt-3 border rounded p-3">
+					<div class="mt-3 border rounded p-3 variant-box">
 						<div class="fw-semibold mb-2">Chọn biến thể</div>
-
 						<div class="mb-2">
 							<div class="text-muted small mb-1">Màu sắc</div>
 							<div id="colorGroup" class="d-flex flex-wrap gap-2">
@@ -331,12 +220,10 @@
 								</c:forEach>
 							</div>
 						</div>
-
 						<div class="mb-2">
 							<div class="text-muted small mb-1">Kích cỡ</div>
 							<div id="sizeGroup" class="d-flex flex-wrap gap-2"></div>
 						</div>
-
 						<div class="small">
 							<span id="stockText" class="text-muted">Vui lòng chọn màu
 								và size.</span>
@@ -350,7 +237,6 @@
 
 				<%-- Thêm vào giỏ (Sử dụng form biến thể của HEAD nếu có, nếu không thì dùng form cơ bản) --%>
 				<div class="mt-3">
-					<%-- Form của HEAD có hidden input variantId --%>
 					<c:choose>
 						<c:when
 							test="${not empty colorGroups and not empty variantIdByKey}">
@@ -363,13 +249,12 @@
 									<div class="input-group" style="width: 260px;">
 										<input type="number" id="qtyInput" name="quantity" value="1"
 											min="1" class="form-control" />
-										<button id="btnAddCart" type="submit" class="btn btn-primary"
+										<button id="btnAddCart" type="submit" class="btn btn-primary btn-add-cart-pulse"
 											disabled>Thêm vào giỏ</button>
 									</div>
 								</div>
 							</form>
 						</c:when>
-						<%-- Form cơ bản (từ 6ed02d8) --%>
 						<c:otherwise>
 							<form id="addToCartForm" method="post" action="${ctx}/cart/add"
 								class="d-flex align-items-center gap-2">
@@ -378,32 +263,33 @@
 								<div class="input-group" style="width: 220px;">
 									<input type="number" name="quantity" value="1" min="1"
 										class="form-control" />
-									<button type="submit" class="btn btn-primary">Thêm vào
+									<button type="submit" class="btn btn-primary btn-add-cart-pulse">Thêm vào
 										giỏ</button>
 								</div>
 							</form>
 						</c:otherwise>
 					</c:choose>
-
-					<small class="text-muted d-block mt-2"> Xem giỏ tại <a
-						class="text-decoration-none" href="${ctx}/cart">${ctx}/cart</a>.
-					</small>
+					
 				</div>
 
 				<div class="mt-3 d-flex gap-2">
 					<a class="btn btn-outline-secondary" href="${ctx}/products">←
-						Quay lại danh sách</a> <a class="btn btn-primary"
+						Quay lại danh sách</a> 
+					<a class="btn btn-primary"
 						href="${ctx}/product/${product.productId}">Tải lại</a>
 				</div>
 			</div>
 		</div>
-
-		<%-- Phần còn lại (liên quan, đã xem, đánh giá, bình luận) của 6ed02d8 được giữ nguyên --%>
-
+		</div>
+		</div>
+		
 		<c:if test="${not empty relatedProducts}">
-			<h2 class="h6 mt-4 mb-2">Sản phẩm liên quan</h2>
+			<div class="card kpi-card related-products-card mt-4">
+			<div class="card-body">
+			<h2 class="h6 mb-3">Sản phẩm liên quan</h2>
 			<div class="row row-cols-2 row-cols-md-4 g-3">
 				<c:forEach var="rp" items="${relatedProducts}">
+					<%-- ... (Resolve ảnh) ... --%>
 					<c:set var="rpRaw" value="${empty rp.coverUrl ? '' : rp.coverUrl}" />
 					<c:set var="rpFixed"
 						value="${fn:replace(rpRaw, '/assset/', '/assets/')}" />
@@ -423,9 +309,11 @@
 								value="${ctx.concat('/assets/img/products/').concat(rpFixed)}" />
 						</c:otherwise>
 					</c:choose>
+					
 					<div class="col">
-						<div class="card h-100">
-							<a href="${ctx}/product/${rp.id}"> <img class="card-img-top"
+					<div class="card-3d-hover">
+						<div class="card h-100 vendor-card product-card-animation"> <%-- Tái sử dụng .vendor-card --%>
+							<a href="${ctx}/product/${rp.id}"> <img class="card-img-top cover" <%-- Thêm class .cover --%>
 								style="aspect-ratio: 1/1; object-fit: cover"
 								src="${empty rpCover ? (ctx.concat('/assets/img/placeholder.png')) : rpCover}"
 								alt="<c:out value='${rp.productName}'/>"
@@ -449,11 +337,16 @@
 							</div>
 						</div>
 					</div>
+					</div>
 				</c:forEach>
+			</div>
+			</div>
 			</div>
 		</c:if>
 
 		<div class="mt-4">
+			<div class="card kpi-card recent-view-card">
+			<div class="card-body">
 			<div class="d-flex align-items-center justify-content-between mb-2">
 				<h2 class="h4 m-0 fw-semibold">Bạn đã xem gần đây</h2>
 				<a class="btn btn-sm btn-outline-secondary" href="${ctx}/recent">Xem
@@ -463,6 +356,7 @@
 				<c:when test="${not empty recentViewed}">
 					<div class="row row-cols-2 row-cols-md-6 g-3">
 						<c:forEach var="rv" items="${recentViewed}">
+							<%-- ... (Resolve ảnh) ... --%>
 							<c:set var="rvRaw"
 								value="${empty rv.coverUrl ? '' : rv.coverUrl}" />
 							<c:set var="rvFixed"
@@ -483,10 +377,12 @@
 										value="${ctx.concat('/assets/img/products/').concat(rvFixed)}" />
 								</c:otherwise>
 							</c:choose>
+							
 							<div class="col">
-								<div class="card h-100">
+							<div class="card-3d-hover">
+								<div class="card h-100 vendor-card product-card-animation"> <%-- Tái sử dụng .vendor-card --%>
 									<a href="${ctx}/product/${rv.productId}"> <img
-										class="card-img-top"
+										class="card-img-top cover" <%-- Thêm class .cover --%>
 										style="aspect-ratio: 1/1; object-fit: cover"
 										src="${empty rvCover ? (ctx.concat('/assets/img/placeholder.png')) : rvCover}"
 										alt="<c:out value='${rv.productName}'/>"
@@ -506,6 +402,7 @@
 										</div>
 									</div>
 								</div>
+							</div>
 							</div>
 						</c:forEach>
 					</div>
@@ -527,12 +424,15 @@
 					</div>
 				</c:otherwise>
 			</c:choose>
+			</div>
+			</div>
 		</div>
 
-		<%-- Đánh giá (từ 6ed02d8) --%>
-		<div class="mt-5">
+		<div class="mt-5 card kpi-card review-card">
+		<div class="card-body">
 			<div id="reviews"></div>
 
+			<%-- ... (C logic) ... --%>
 			<c:set var="canReviewStr" value="${empty canReview ? '' : canReview}" />
 			<c:set var="canReviewStrLower"
 				value="${fn:toLowerCase(canReviewStr)}" />
@@ -549,6 +449,7 @@
 				value="${fn:toLowerCase(fromOrderStr)}" />
 			<c:set var="fromOrderOK"
 				value="${fromOrder == true or fromOrderStrLower == 'true' or fromOrderStrLower == '1'}" />
+			<%-- ... (Hết C logic) ... --%>
 
 			<h2 class="h5 mb-3">Đánh giá sản phẩm</h2>
 			<c:set var="avgStar"
@@ -571,7 +472,7 @@
 			<%-- Form --%>
 			<c:if
 				test="${canReviewOK or not empty userReview or (loggedInOK and fromOrderOK)}">
-				<div class="border rounded p-3 mb-3">
+				<div class="border rounded p-3 mb-3 review-form-box">
 					<form id="reviewForm" method="post" action="${ctx}/review/save"
 						enctype="multipart/form-data">
 						<input type="hidden" name="productId" value="${product.productId}" />
@@ -593,8 +494,6 @@
 							<textarea class="form-control" name="comment" rows="3"
 								placeholder="Cảm nhận của bạn...">${empty userReview ? '' : userReview.commentText}</textarea>
 						</div>
-
-						<%-- NEW: Upload + URL (song song) --%>
 						<div class="row g-2">
 							<div class="col-12 col-md-6">
 								<label class="form-label">Ảnh thực tế</label> <input
@@ -615,7 +514,6 @@
 									placeholder="https://... (tuỳ chọn)" />
 							</div>
 						</div>
-
 						<div class="mt-3 d-flex gap-2 align-items-center">
 							<button class="btn btn-primary" type="submit"
 								id="btnSubmitReview">${empty userReview ? 'Gửi đánh giá' : 'Cập nhật đánh giá'}</button>
@@ -635,14 +533,13 @@
 					hàng để đánh giá.</div>
 			</c:if>
 
-			<%-- Lấy danh sách: ưu tiên reviews, fallback rvList --%>
 			<c:set var="rvItems" value="${not empty reviews ? reviews : rvList}" />
-
 			<c:choose>
 				<c:when test="${not empty rvItems}">
 					<div id="rv-list" class="mt-3">
 						<c:forEach var="rv" items="${rvItems}">
 							<div class="rv-item">
+								<%-- ... (Nội dung rv-item) ... --%>
 								<div class="d-flex align-items-center gap-2">
 									<strong><c:out value="${rv.userName}" /></strong> <span
 										class="rv-meta">• <c:out value="${rv.createdAt}" /></span>
@@ -698,11 +595,13 @@
 				</c:otherwise>
 			</c:choose>
 		</div>
+		</div>
+		</div>
 
-		<%-- BÌNH LUẬN (từ 6ed02d8) --%>
-		<div class="mt-5">
+		<div class="mt-5 card kpi-card comment-card">
+		<div class="card-body">
 			<h2 class="h6 mb-3">Bình luận</h2>
-			<div class="border rounded p-3 mb-3">
+			<div class="border rounded p-3 mb-3 comment-form-box">
 				<form id="commentForm" method="post" action="${ctx}/comment/add">
 					<input type="hidden" name="productId" value="${product.productId}" />
 					<div class="mb-2">
@@ -719,6 +618,7 @@
 				<div class="text-muted">Đang tải bình luận...</div>
 			</div>
 		</div>
+		</div>
 
 	</c:when>
 	<c:otherwise>
@@ -727,7 +627,8 @@
 	</c:otherwise>
 </c:choose>
 
-<%-- Toast cho giỏ hàng (từ HEAD) --%>
+</div> 
+<%-- (Giữ nguyên Toast và Modal) --%>
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
 	<div id="cartToast"
 		class="toast align-items-center text-bg-success border-0"
@@ -740,186 +641,6 @@
 		</div>
 	</div>
 </div>
-
-<%-- Script JS cho Biến thể (từ HEAD) --%>
-<script>
-(function(){
-	// colorGroups: map color -> list sizes
-	var COLOR_GROUPS = {};
-	<c:forEach var="e" items="${colorGroups}">
-		COLOR_GROUPS["${fn:escapeXml(e.key)}"] = [
-			<c:forEach var="sz" items="${e.value}" varStatus="st">"${fn:escapeXml(sz)}"${st.last ? "" : ","}</c:forEach>
-		];
-	</c:forEach>
-
-	// variantIdByKey: "color|size" -> id
-	var VARIANT_ID = {};
-	<c:forEach var="it" items="${variantIdByKey}">
-		VARIANT_ID["${fn:escapeXml(it.key)}"] = ${it.value};
-	</c:forEach>
-
-	// variantStock: "color|size" -> stock
-	var VARIANT_STOCK = {};
-	<c:forEach var="it" items="${variantStock}">
-		VARIANT_STOCK["${fn:escapeXml(it.key)}"] = ${it.value};
-	</c:forEach>
-
-	// image map theo biến thể: cố gắng lấy từ list variants (nếu có)
-	var VARIANT_IMG = {};
-	<c:if test="${not empty variants}">
-		<c:forEach var="v" items="${variants}">
-			<c:if test="${not empty v.imageUrl}">
-				VARIANT_IMG["${fn:escapeXml(v.color)}|${fn:escapeXml(v.size)}"] = "${fn:escapeXml(v.imageUrl)}";
-			</c:if>
-		</c:forEach>
-	</c:if>
-
-	var colorGroupEl = document.getElementById('colorGroup');
-	var sizeGroupEl	 = document.getElementById('sizeGroup');
-	var stockTextEl	 = document.getElementById('stockText');
-	var variantIdEl	 = document.getElementById('variantId');
-	var qtyInput	 = document.getElementById('qtyInput');
-	var btnAdd	 	 = document.getElementById('btnAddCart');
-	var mainImg	 	 = document.getElementById('mainImage');
-	var originalMainImgSrc = mainImg ? mainImg.src : null; // Lưu lại ảnh gốc
-
-	var chosen = { color: null, size: null };
-
-	function renderSizes(color) {
-		// Reset trạng thái
-		sizeGroupEl.innerHTML = '';
-		chosen.size = null;
-		
-		if (!color || !COLOR_GROUPS[color] || COLOR_GROUPS[color].length === 0) {
-			stockTextEl.textContent = 'Vui lòng chọn màu.';
-			updateState();
-			return;
-		}
-		
-		// Render các nút chọn size
-		COLOR_GROUPS[color].forEach(function(sz){
-			var btn = document.createElement('button');
-			btn.type = 'button';
-			btn.className = 'btn btn-outline-secondary btn-sm';
-			btn.textContent = sz;
-			btn.addEventListener('click', function(){
-				chosen.size = sz;
-				updateState();
-				highlightSize(sz);
-			});
-			sizeGroupEl.appendChild(btn);
-		});
-	}
-	function highlightColor(color) {
-	    Array.from(colorGroupEl.querySelectorAll('label')).forEach(function(lb){
-	      var inp = lb.querySelector('input[type="radio"]');
-	      if (inp && inp.value === color) lb.classList.add('active'); else lb.classList.remove('active');
-	    });
-	  }
-	  
-	  function highlightSize(size) {
-	    Array.from(sizeGroupEl.querySelectorAll('button')).forEach(function(b){
-	      if (b.textContent === size) b.classList.add('btn-primary'), b.classList.remove('btn-outline-secondary');
-	      else b.classList.add('btn-outline-secondary'), b.classList.remove('btn-primary');
-	    });
-	  }
-
-	  function updateMainImageIfAny(color, size) {
-	    if (!mainImg) return;
-	    
-	    var key = (color || '') + '|' + (size || '');
-	    var url = VARIANT_IMG[key];
-	    
-	    if (url) {
-	      // Logic resolve path tương tự server
-	      // Thay thế /assset/ thành /assets/
-	      url = url.replace('/assset/', '/assets/');
-	      
-	      // Nếu là relative path, thêm context path + default folder
-	      if (!/^https?:\/\//.test(url) && !url.startsWith('/')) {
-	        url = '${ctx}/assets/img/products/' + url;
-	      } else if (url.startsWith('/')) {
-	         // Nếu là root path, đảm bảo context path (nếu cần)
-	         if (!url.startsWith('${ctx}')) url = '${ctx}' + url;
-	      }
-	      mainImg.src = url;
-	    } else {
-	      // Không có ảnh biến thể -> trở về ảnh chính (đã được lưu khi load)
-	      mainImg.src = originalMainImgSrc;
-	    }
-	  }
-
-	  function updateState() {
-	    var key = (chosen.color || '') + '|' + (chosen.size || '');
-	    var st  = VARIANT_STOCK[key] || 0;
-	    var vid = VARIANT_ID[key];
-
-	    // Cập nhật text trạng thái
-	    if (chosen.color && !chosen.size) {
-	      stockTextEl.textContent = 'Đã chọn màu ' + chosen.color + '. Hãy chọn size.';
-	    } else if (chosen.color && chosen.size) {
-	      stockTextEl.textContent = 'Còn ' + st + ' sản phẩm.';
-	    } else {
-	      stockTextEl.textContent = 'Vui lòng chọn màu và size.';
-	    }
-
-	    // Cập nhật ID biến thể và trạng thái nút Thêm vào giỏ
-	    if (vid) {
-	      variantIdEl.value = String(vid);
-	      btnAdd.removeAttribute('disabled');
-	      // Thêm kiểm tra tồn kho: nếu stock = 0
-	      if (st <= 0) {
-	        btnAdd.setAttribute('disabled', 'disabled');
-	        stockTextEl.textContent = 'HẾT HÀNG! Biến thể này tạm hết hàng.';
-	      }
-	    } else {
-	      variantIdEl.value = '';
-	      btnAdd.setAttribute('disabled', 'disabled');
-	    }
-
-	    // Giới hạn qty (min=1, max=stock)
-	    var maxQty = Math.max(1, st);
-	    qtyInput.min = 1;
-	    qtyInput.max = maxQty;
-	    if (+qtyInput.value > maxQty) qtyInput.value = maxQty;
-	    if (+qtyInput.value < 1) qtyInput.value = 1; // fix nếu nhập 0 hoặc âm
-
-	    // Ảnh theo biến thể (nếu có)
-	    updateMainImageIfAny(chosen.color, chosen.size);
-	  }
-
-	  // Bind chọn color
-	  Array.from(colorGroupEl.querySelectorAll('input[name="chooseColor"]')).forEach(function(inp){
-	    inp.addEventListener('change', function(){
-	      chosen.color = inp.value;
-	      chosen.size = null; // reset size khi đổi màu
-	      renderSizes(chosen.color);
-	      highlightColor(chosen.color);
-	      updateState();
-	    });
-	  });
-
-	  // Nếu không có biến thể: Bỏ disabled nút Thêm vào giỏ
-	  var isNoVariant = (Object.keys(COLOR_GROUPS).length === 0);
-	  if (isNoVariant) {
-	    btnAdd.removeAttribute('disabled');
-	    variantIdEl.value = '';
-	    stockTextEl.textContent = 'Sản phẩm không có biến thể; có thể đặt như bình thường.';
-	    // Đồng thời ẩn box chọn biến thể nếu không có
-	    var variantBox = colorGroupEl.closest('.mt-3.border.rounded.p-3');
-	    if (variantBox) variantBox.style.display = 'none';
-	  } else {
-	    // Nếu có biến thể, tự động chọn màu đầu tiên để hiển thị size
-	    var firstColor = colorGroupEl.querySelector('input[name="chooseColor"]');
-	    if (firstColor) {
-	      firstColor.checked = true;
-	      firstColor.dispatchEvent(new Event('change'));
-	    }
-	  }
-
-	})();
-	</script>
-<%-- Toast riêng cho bình luận/đánh giá (MỚI) --%>
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
 	<div id="cmToast"
 		class="toast align-items-center text-bg-primary border-0"
@@ -932,8 +653,6 @@
 		</div>
 	</div>
 </div>
-
-<%-- Modal xác nhận xoá bình luận (MỚI) --%>
 <div class="modal fade" id="cmConfirmModal" tabindex="-1"
 	aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
@@ -953,11 +672,151 @@
 		</div>
 	</div>
 </div>
+
+<%-- (Giữ nguyên Script JS) --%>
+<script>
+(function(){
+	// ... (Toàn bộ script JS của bro) ...
+	var COLOR_GROUPS = {};
+	<c:forEach var="e" items="${colorGroups}">
+		COLOR_GROUPS["${fn:escapeXml(e.key)}"] = [
+			<c:forEach var="sz" items="${e.value}" varStatus="st">"${fn:escapeXml(sz)}"${st.last ? "" : ","}</c:forEach>
+		];
+	</c:forEach>
+	var VARIANT_ID = {};
+	<c:forEach var="it" items="${variantIdByKey}">
+		VARIANT_ID["${fn:escapeXml(it.key)}"] = ${it.value};
+	</c:forEach>
+	var VARIANT_STOCK = {};
+	<c:forEach var="it" items="${variantStock}">
+		VARIANT_STOCK["${fn:escapeXml(it.key)}"] = ${it.value};
+	</c:forEach>
+	var VARIANT_IMG = {};
+	<c:if test="${not empty variants}">
+		<c:forEach var="v" items="${variants}">
+			<c:if test="${not empty v.imageUrl}">
+				VARIANT_IMG["${fn:escapeXml(v.color)}|${fn:escapeXml(v.size)}"] = "${fn:escapeXml(v.imageUrl)}";
+			</c:if>
+		</c:forEach>
+	</c:if>
+	var colorGroupEl = document.getElementById('colorGroup');
+	var sizeGroupEl	 = document.getElementById('sizeGroup');
+	var stockTextEl	 = document.getElementById('stockText');
+	var variantIdEl	 = document.getElementById('variantId');
+	var qtyInput	 = document.getElementById('qtyInput');
+	var btnAdd	 	 = document.getElementById('btnAddCart');
+	var mainImg	 	 = document.getElementById('mainImage');
+	var originalMainImgSrc = mainImg ? mainImg.src : null; 
+	var chosen = { color: null, size: null };
+	function renderSizes(color) {
+		sizeGroupEl.innerHTML = '';
+		chosen.size = null;
+		if (!color || !COLOR_GROUPS[color] || COLOR_GROUPS[color].length === 0) {
+			stockTextEl.textContent = 'Vui lòng chọn màu.';
+			updateState();
+			return;
+		}
+		COLOR_GROUPS[color].forEach(function(sz){
+			var btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'btn btn-outline-secondary btn-sm';
+			btn.textContent = sz;
+			btn.addEventListener('click', function(){
+				chosen.size = sz;
+				updateState();
+				highlightSize(sz);
+			});
+			sizeGroupEl.appendChild(btn);
+		});
+	}
+	function highlightColor(color) {
+	    Array.from(colorGroupEl.querySelectorAll('label')).forEach(function(lb){
+	      var inp = lb.querySelector('input[type="radio"]');
+	      if (inp && inp.value === color) lb.classList.add('active'); else lb.classList.remove('active');
+	    });
+	  }
+	  function highlightSize(size) {
+	    Array.from(sizeGroupEl.querySelectorAll('button')).forEach(function(b){
+	      if (b.textContent === size) b.classList.add('btn-primary'), b.classList.remove('btn-outline-secondary');
+	      else b.classList.add('btn-outline-secondary'), b.classList.remove('btn-primary');
+	    });
+	  }
+	  function updateMainImageIfAny(color, size) {
+	    if (!mainImg) return;
+	    var key = (color || '') + '|' + (size || '');
+	    var url = VARIANT_IMG[key];
+	    if (url) {
+	      url = url.replace('/assset/', '/assets/');
+	      if (!/^https?:\/\//.test(url) && !url.startsWith('/')) {
+	        url = '${ctx}/assets/img/products/' + url;
+	      } else if (url.startsWith('/')) {
+	         if (!url.startsWith('${ctx}')) url = '${ctx}' + url;
+	      }
+	      mainImg.src = url;
+	    } else {
+	      mainImg.src = originalMainImgSrc;
+	    }
+	  }
+	  function updateState() {
+	    var key = (chosen.color || '') + '|' + (chosen.size || '');
+	    var st  = VARIANT_STOCK[key] || 0;
+	    var vid = VARIANT_ID[key];
+	    if (chosen.color && !chosen.size) {
+	      stockTextEl.textContent = 'Đã chọn màu ' + chosen.color + '. Hãy chọn size.';
+	    } else if (chosen.color && chosen.size) {
+	      stockTextEl.textContent = 'Còn ' + st + ' sản phẩm.';
+	    } else {
+	      stockTextEl.textContent = 'Vui lòng chọn màu và size.';
+	    }
+	    if (vid) {
+	      variantIdEl.value = String(vid);
+	      btnAdd.removeAttribute('disabled');
+	      if (st <= 0) {
+	        btnAdd.setAttribute('disabled', 'disabled');
+	        stockTextEl.textContent = 'HẾT HÀNG! Biến thể này tạm hết hàng.';
+	      }
+	    } else {
+	      variantIdEl.value = '';
+	      btnAdd.setAttribute('disabled', 'disabled');
+	    }
+	    var maxQty = Math.max(1, st);
+	    qtyInput.min = 1;
+	    qtyInput.max = maxQty;
+	    if (+qtyInput.value > maxQty) qtyInput.value = maxQty;
+	    if (+qtyInput.value < 1) qtyInput.value = 1; 
+	    updateMainImageIfAny(chosen.color, chosen.size);
+	  }
+	  Array.from(colorGroupEl.querySelectorAll('input[name="chooseColor"]')).forEach(function(inp){
+	    inp.addEventListener('change', function(){
+	      chosen.color = inp.value;
+	      chosen.size = null; 
+	      renderSizes(chosen.color);
+	      highlightColor(chosen.color);
+	      updateState();
+	    });
+	  });
+	  var isNoVariant = (Object.keys(COLOR_GROUPS).length === 0);
+	  if (isNoVariant) {
+		// *** FIX LỖI NÚT "THÊM VÀO GIỎ" CHO SẢN PHẨM KHÔNG CÓ BIẾN THỂ ***
+	    var btnNoVariant = document.querySelector('#addToCartForm button[type="submit"]');
+	    if(btnNoVariant) btnNoVariant.removeAttribute('disabled');
+	    
+	    if(variantIdEl) variantIdEl.value = '';
+	    if(stockTextEl) stockTextEl.textContent = 'Sản phẩm không có biến thể; có thể đặt như bình thường.';
+	    var variantBox = colorGroupEl ? colorGroupEl.closest('.mt-3.border.rounded.p-3') : null;
+	    if (variantBox) variantBox.style.display = 'none';
+	  } else {
+	    var firstColor = colorGroupEl.querySelector('input[name="chooseColor"]');
+	    if (firstColor) {
+	      firstColor.checked = true;
+	      firstColor.dispatchEvent(new Event('change'));
+	    }
+	  }
+	})();
+</script>
 <script>
 	document.addEventListener("DOMContentLoaded", function(){
 	  const ctx = "<c:out value='${ctx}'/>";
-
-	  /* ===== Helpers: Toast & Confirm Modal ===== */
 	  function showToast(msg, variant){
 	    var el = document.getElementById("cmToast");
 	    var body = document.getElementById("cmToastBody");
@@ -988,8 +847,6 @@
 	      bs ? bs.show() : resolve(confirm(message||"Bạn chắc chắn?"));
 	    });
 	  }
-
-	  /* ========= Favorite toggle ========= */
 	  (function(){
 	    const btn = document.getElementById("btn-fav");
 	    if (!btn) return;
@@ -1020,8 +877,6 @@
 	      }
 	    });
 	  })();
-
-	  /* ========= Reviews ========= */
 	  (function(){
 	    const starPicker = document.getElementById("starPicker");
 	    const ratingInput = document.getElementById("rvRating");
@@ -1033,7 +888,6 @@
 	    const avgStarsEl = document.getElementById("rv-avg-stars");
 	    const countEl = document.getElementById("rv-count");
 	    const productId = "<c:out value='${product.productId}'/>";
-
 	    function renderAvgStars(avg){
 	      if (!avgStarsEl) return;
 	      const filled = Math.round(avg);
@@ -1095,11 +949,8 @@
 	        +   '<div class="rv-media d-flex gap-2 mt-2">' + media + '</div>'
 	        + '</div>';
 	    }
-
-	    /* ===== NEW: khoá form review khi quá hạn/không đủ điều kiện ===== */
 	    function lockReviewForm(reason){
 	      if (!reviewForm) return;
-	      // disable inputs
 	      reviewForm.querySelectorAll("input, textarea, button").forEach(function(el){
 	        if (el.id === "btnComment") return;
 	        if (el.id === "btnDelReview") el.classList.add("d-none");
@@ -1114,8 +965,6 @@
 	        rvHint.textContent = reason || "Chỉ cho phép sửa/xoá trong 24 giờ đầu.";
 	      }
 	    }
-
-	    /* === Luôn tải danh sách review === */
 	    async function loadReviewsList(force){
 	      const wrap = ensureListContainer();
 	      if (!force && wrap.querySelector('.rv-item')) return;
@@ -1137,8 +986,6 @@
 	        wrap.innerHTML = '<div class="text-muted">Không tải được danh sách đánh giá.</div>';
 	      }
 	    }
-
-	    /* star picker */
 	    if (starPicker){
 	      starPicker.addEventListener("click", function(ev){
 	        const t = ev.target;
@@ -1148,40 +995,31 @@
 	        setStars(v);
 	      });
 	    }
-
-	    /* submit review */
 	    if (reviewForm){
 	      reviewForm.addEventListener("submit", async function(ev){
 	        ev.preventDefault();
-
 	        const fd = new FormData(reviewForm);
 	        const rating = parseInt((fd.get("rating")||"0").toString(), 10);
 	        if (!rating || rating < 1 || rating > 5){
 	          showToast("Vui lòng chọn số sao (1–5).", "danger");
 	          return;
 	        }
-
-	        // NEW: phát hiện có file để dùng multipart
 	        const hasImageFiles = Array.from(reviewForm.querySelectorAll('input[name="images"]'))
 	              .some(function(i){ return i && i.files && i.files.length > 0; });
 	        const videoInput = reviewForm.querySelector('input[name="video"]');
 	        const hasVideoFile = !!(videoInput && videoInput.files && videoInput.files.length > 0);
 	        const useMultipart = hasImageFiles || hasVideoFile;
-
 	        try{
 	          let res, payload;
 	          if (useMultipart){
-	            // multipart: giữ nguyên fd + append productId/rating/comment
 	            fd.set("productId", "<c:out value='${product.productId}'/>");
 	            fd.set("rating", String(rating));
-	            // Không set headers Content-Type → browser tự đặt boundary
 	            res = await fetch(reviewForm.action, {
 	              method:"POST",
 	              headers:{ "Accept":"application/json", "X-Requested-With":"XMLHttpRequest" },
 	              body: fd
 	            });
 	          } else {
-	            // url-encoded như cũ
 	            res = await fetch(reviewForm.action, {
 	              method:"POST",
 	              headers:{ "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8", "Accept":"application/json", "X-Requested-With":"XMLHttpRequest" },
@@ -1194,10 +1032,8 @@
 	              })
 	            });
 	          }
-
 	          if (res.status === 401){ window.location.href = ctx + "/login"; return; }
 	          try { payload = await res.clone().json(); } catch(_) {}
-
 	          if (res.ok && payload && payload.ok){
 	            if (payload.stats){
 	              const avg = typeof payload.stats.avg === "number" ? payload.stats.avg : (avgEl ? parseFloat(avgEl.textContent||"0") : 0);
@@ -1208,10 +1044,8 @@
 	            const cmt = reviewForm.querySelector("textarea[name='comment']"); if (cmt) cmt.value = "";
 	            const img = reviewForm.querySelector("input[name='imageUrl']");  if (img) img.value = "";
 	            const vid = reviewForm.querySelector("input[name='videoUrl']");  if (vid) vid.value = "";
-	            // NEW: clear file inputs
 	            const imgFile = reviewForm.querySelector('input[name="images"]'); if (imgFile) imgFile.value = "";
 	            const vFile   = reviewForm.querySelector('input[name="video"]');  if (vFile) vFile.value = "";
-
 	            showToast("Đã lưu đánh giá.", "success");
 	            await loadReviewsList(true);
 	          } else if (res.status === 403) {
@@ -1226,15 +1060,13 @@
 	              showToast("Không thể lưu đánh giá.", "danger");
 	            }
 	          } else {
-	            showToast("Không thể lưu đánh giá.", "danger");
+	            showToast("Không thể lưu đánhá.", "danger");
 	          }
 	        }catch(e){
 	          console.error(e); showToast("Lỗi kết nối khi gửi đánh giá.", "danger");
 	        }
 	      });
 	    }
-
-	    /* delete review */
 	    if (btnDel){
 	      btnDel.addEventListener("click", async function(){
 	        const ok = await confirmModal("Xoá đánh giá của bạn?");
@@ -1281,8 +1113,6 @@
 	        }
 	      });
 	    }
-
-	    /* === Đồng bộ sau reload — lấy stats & đánh giá của tôi === */
 	    (async function syncStatsAndMineOnLoad(){
 	      try{
 	        const sres = await fetch(ctx + "/review/stats?productId=" + encodeURIComponent(productId), { headers:{ "Accept":"application/json" }});
@@ -1304,8 +1134,6 @@
 	            const img = reviewForm.querySelector("input[name='imageUrl']");  if (img) img.value = (me.imageUrl||"");
 	            const vid = reviewForm.querySelector("input[name='videoUrl']");  if (vid) vid.value = (me.videoUrl||"");
 	            if (btnDel) btnDel.classList.remove("d-none");
-
-	            // NEW: nếu quá 24h kể từ createdAt → khoá form
 	            try{
 	              if (me.createdAt){
 	                const created = new Date(me.createdAt.replace(' ', 'T'));
@@ -1320,19 +1148,13 @@
 	        }
 	      }catch(_){}
 	    })();
-
-	    // Luôn refresh danh sách từ API để tránh trùng
 	    loadReviewsList(true);
-
 	  })();
-
-	  /* ========= Comments ========= */
 	  (function(){
 	    const list = document.getElementById("cmList");
 	    const rootForm = document.getElementById("commentForm");
 	    if (!list) return;
 	    const productId = list.getAttribute("data-productid");
-
 	    async function loadThreadAndRender(){
 	      try{
 	        const res = await fetch(ctx + "/comment/thread?productId=" + encodeURIComponent(productId), { headers:{ "Accept":"application/json" }});
@@ -1345,9 +1167,7 @@
 	        list.innerHTML = '<div class="text-danger">Không tải được bình luận.</div>';
 	      }
 	    }
-
 	    function escHtml(s){ return (s||"").replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]}); }
-
 	    function renderThread(items){
 	      if (!items.length){ list.innerHTML = '<div class="text-muted">Chưa có bình luận nào.</div>'; return; }
 	      var html = items.map(function(it){
@@ -1379,9 +1199,7 @@
 	      }).join('');
 	      list.innerHTML = html;
 	    }
-
 	    loadThreadAndRender();
-
 	    if (rootForm){
 	      rootForm.addEventListener("submit", async function(ev){
 	        ev.preventDefault();
@@ -1404,11 +1222,9 @@
 	        }
 	      });
 	    }
-
 	    document.getElementById("cmList").addEventListener("click", async function(ev){
 	      const t = ev.target;
 	      if (!(t instanceof HTMLElement)) return;
-
 	      if (t.classList.contains("btn-cm-reply")){
 	        const cid = t.getAttribute("data-cid");
 	        const frm = document.getElementById("rf-" + cid);
@@ -1424,10 +1240,8 @@
 	      if (t.classList.contains("btn-cm-del")) {
 	        const cid = t.getAttribute("data-cid");
 	        if (!cid) return;
-
 	        const ok = await confirmModal("Xóa bình luận này?");
 	        if (!ok) return;
-
 	        try {
 	          const res = await fetch(ctx + "/comment/delete", {
 	            method: "POST",
@@ -1438,12 +1252,9 @@
 	            },
 	            body: new URLSearchParams({ commentId: cid, productId: productId })
 	          });
-
 	          if (res.status === 401) { window.location.href = ctx + "/login"; return; }
-
 	          let payload = null;
 	          try { payload = await res.clone().json(); } catch (_) {}
-
 	          if (res.ok && payload && payload.ok !== false) {
 	            const row = t.closest(".cm-item");
 	            if (row) row.remove();
@@ -1462,7 +1273,6 @@
 	        }
 	      }
 	    });
-
 	    document.getElementById("cmList").addEventListener("submit", async function(ev){
 	      const form = ev.target;
 	      if (!(form instanceof HTMLFormElement)) return;
@@ -1492,15 +1302,13 @@
 	      }
 	    });
 	  })();
-
-	  /* ========= Thumbs ảnh ========= */
 	  (function(){
 	    const main = document.getElementById("mainImage");
 	    if (!main) return;
 	    document.querySelectorAll(".thumb").forEach(function(th){
 	      th.addEventListener("click", function(){
-	        document.querySelectorAll(".thumb").forEach(function(x){ x.classList.remove("border-primary"); });
-	        th.classList.add("border-primary");
+	        document.querySelectorAll(".thumb").forEach(function(x){ x.classList.remove("active"); }); // Bỏ "border-primary"
+	        th.classList.add("active"); // Thêm class "active" (để CSS "độ")
 	        const src = th.getAttribute("data-src") || th.getAttribute("src");
 	        if (src) main.src = src;
 	      });

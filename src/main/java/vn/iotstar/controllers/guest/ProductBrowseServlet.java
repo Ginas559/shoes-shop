@@ -17,6 +17,10 @@ import java.util.ArrayList;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
 
+//+ ADD
+import vn.iotstar.entities.Shop;
+import vn.iotstar.services.StatisticService; // dùng hàm findShopById(...) mà bạn đang có
+
 /**
  * Lưu ý cập nhật:
  * - Bổ sung nạp dữ liệu Review/Comment:
@@ -36,7 +40,7 @@ public class ProductBrowseServlet extends HttpServlet {
 
     /** Giới hạn lớn để coi như “lấy tất cả” review mà không cần thay đổi SQL ở Service */
     private static final int RV_ALL_LIMIT = 1000;
-
+    private final StatisticService stats = new StatisticService();
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -50,6 +54,15 @@ public class ProductBrowseServlet extends HttpServlet {
         int size = parseInt(req.getParameter("size"), 20);
 
         Long shopId = parseLongObj(req.getParameter("shopId"));
+        
+        if (shopId != null) {
+            Shop shop = stats.findShopById(shopId);
+            if (shop != null) {
+                req.setAttribute("shop", shop);
+                // (optional) đặt tiêu đề trang cho đẹp
+                req.setAttribute("pageTitle", "Sản phẩm - " + shop.getShopName());
+            }
+        }
 
         // Lấy các tham số filter từ request
         String brand    = req.getParameter("brand");

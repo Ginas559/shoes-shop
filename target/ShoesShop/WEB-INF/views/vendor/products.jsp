@@ -2,6 +2,26 @@
 <%@ page contentType="text/html;charset=UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${pageTitle != null ? pageTitle : 'BMTT Shop'}</title>
+
+<sitemesh:write property="head" />
+
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/assets/css/web.css">
+
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
 <c:choose>
 	<c:when test="${empty p}">
 		<c:set var="actionPath" value="/vendor/products/add" />
@@ -11,16 +31,16 @@
 	</c:otherwise>
 </c:choose>
 
-<main class="container py-4">
+<main class="container py-4 main-products">
 	<div class="d-flex align-items-center justify-content-between mb-3">
-		<h2 class="mb-0">Quản lý sản phẩm</h2>
+		<h2 class="mb-0 gradient-text">Quản lý sản phẩm</h2>
 		<c:if test="${not empty shop}">
-			<span class="text-muted">Shop: <strong>${shop.shopName}</strong></span>
+			<span class="text-dark fw-bold">Shop: <strong>${shop.shopName}</strong></span>
 		</c:if>
 	</div>
 
 	<c:if test="${not empty errors}">
-		<div class="alert alert-danger">
+		<div class="alert alert-danger glass-alert">
 			<ul class="mb-0">
 				<c:forEach var="e" items="${errors}">
 					<li>${e}</li>
@@ -29,7 +49,7 @@
 		</div>
 	</c:if>
 
-	<div class="card shadow-sm mb-3">
+	<div class="card kpi-card mb-3">
 		<div class="card-body">
 			<h5 class="card-title">Thêm / Cập nhật sản phẩm</h5>
 
@@ -105,7 +125,7 @@
 		</div>
 	</div>
 
-	<div class="card shadow-sm mb-4">
+	<div class="card kpi-card mb-4">
 		<div class="card-body">
 			<h5 class="card-title">Tìm kiếm & Lọc</h5>
 			<form method="get" action="<c:url value='/vendor/products'/>"
@@ -143,18 +163,18 @@
 					</select>
 				</div>
 				<div class="col-md-1 d-grid">
-					<button class="btn btn-outline-secondary">Lọc</button>
+					<button class="btn btn-secondary">Lọc</button>
 				</div>
 			</form>
 		</div>
 	</div>
 
-	<div class="card shadow-sm">
+	<div class="card recent-orders-card">
 		<div class="card-body">
 			<h5 class="card-title">Danh sách sản phẩm</h5>
 			<div class="table-responsive">
-				<table class="table table-bordered align-middle mb-0">
-					<thead class="table-light">
+				<table class="table align-middle mb-0 table-hover">
+					<thead>
 						<tr>
 							<th>ID</th>
 							<th>Ảnh</th>
@@ -193,7 +213,8 @@
 								<td><span
 									class="badge status-badge bg-${it.status == 'ACTIVE' ? 'success' : 'secondary'}">
 										${it.status} </span></td>
-								<td class="d-flex gap-2"><a
+										
+								<td class="product-actions"><a
 									class="btn btn-sm btn-outline-primary"
 									href="<c:url value='/vendor/products/edit'>
               <c:param name='id' value='${it.productId}'/>
@@ -220,7 +241,7 @@
 
 			<c:if test="${totalPages > 1}">
 				<nav class="mt-3">
-					<ul class="pagination mb-0">
+					<ul class="pagination mb-0 pagination-glass">
 						<c:set var="cur" value="${page}" />
 						<li class="page-item ${cur <= 1 ? 'disabled' : ''}"><a
 							class="page-link"
