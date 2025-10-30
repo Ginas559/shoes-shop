@@ -175,6 +175,7 @@ vn\iotstar\DAO\Impl\CategoryDaoImpl.class
 vn\iotstar\controllers\vendor\ShoeAttributeServlet.class
 vn\iotstar\DAO\Impl\ProductDaoImpl.class
 vn\iotstar\entities\Cart$CartBuilder.class
+vn\iotstar\services\ProductBrowseService$AttrTriple.class
 vn\iotstar\entities\ProductImage.class
 vn\iotstar\controllers\vendor\VendorDashboardServlet.class
 vn\iotstar\DAO\Impl\ShopDaoImpl.class
