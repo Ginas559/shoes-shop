@@ -1,11 +1,11 @@
 // filepath: src/main/java/vn/iotstar/controllers/vendor/VendorOrderServlet.java
+
 package vn.iotstar.controllers.vendor;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
-import java.util.List;
 import java.util.Objects;
 
 import vn.iotstar.entities.Order;
@@ -20,6 +20,15 @@ public class VendorOrderServlet extends HttpServlet {
 
     private final OrderService orderService = new OrderService();
     private final StatisticService helper = new StatisticService();
+
+    // ⭐ NEW: Hàm tiện ích để parse Integer an toàn
+    private static int pi(String s, int d) {
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return d;
+        }
+    }
 
     /**
      * Gợi nhớ về JWT:
@@ -70,11 +79,27 @@ public class VendorOrderServlet extends HttpServlet {
             return;
         }
 
-        String status = req.getParameter("status"); // NEW/CONFIRMED/SHIPPING/DONE/CANCELLED
-        List<Order> orders = orderService.getOrdersByStatus(shop.getShopId(), status);
+        // ⭐ NEW: Đọc tham số q, page, size
+        String status = req.getParameter("status"); // Trạng thái lọc
+        String q = req.getParameter("q");           // Chuỗi tìm kiếm tên/email khách hàng
+        int page = pi(req.getParameter("page"), 1); // Trang hiện tại (mặc định 1)
+        int size = pi(req.getParameter("size"), 20); // Kích thước trang (mặc định 20)
+        
+        // ⭐ NEW: Sử dụng phương thức findByShopPaged
+        OrderService.PageResult<Order> pr = orderService.findByShopPaged(
+                shop.getShopId(), status, q, page, size);
 
-        req.setAttribute("orders", orders);
+        // ⭐ NEW: Gắn tất cả thông tin phân trang lên request
+        req.setAttribute("orders", pr.items); // Danh sách đơn hàng cho trang hiện tại
+        req.setAttribute("page", pr.page);
+        req.setAttribute("size", pr.size);
+        req.setAttribute("totalPages", pr.totalPages);
+        req.setAttribute("totalItems", pr.totalItems);
+        
+        // Gắn lại các tham số lọc/tìm kiếm để giữ trạng thái trên giao diện
         req.setAttribute("status", status);
+        req.setAttribute("q", q); 
+        
         req.getRequestDispatcher("/WEB-INF/views/vendor/orders.jsp").forward(req, resp);
     }
 
@@ -106,6 +131,9 @@ public class VendorOrderServlet extends HttpServlet {
         }
 
         orderService.updateStatus(orderId, newStatus);
+        
+        // Sau khi update, redirect về trang danh sách (nên giữ lại tham số trạng thái hiện tại nếu cần)
+        // Hiện tại chỉ redirect về /vendor/orders (trang 1, mặc định)
         resp.sendRedirect(req.getContextPath() + "/vendor/orders");
     }
 }

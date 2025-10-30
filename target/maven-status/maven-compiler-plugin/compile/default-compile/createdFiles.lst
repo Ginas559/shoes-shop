@@ -67,6 +67,7 @@ vn\iotstar\entities\Category.class
 vn\iotstar\entities\Order$OrderStatus.class
 vn\iotstar\controllers\admin\UserController.class
 vn\iotstar\controllers\guest\RecentViewedServlet.class
+vn\iotstar\services\OrderService$PageResult.class
 vn\iotstar\services\admin\AdminOrderService.class
 vn\iotstar\DAO\IOrderDao.class
 vn\iotstar\controllers\order\OrderServlet.class
