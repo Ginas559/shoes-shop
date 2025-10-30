@@ -55,53 +55,102 @@ public class VendorShopServlet extends HttpServlet {
 
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException, IOException {
+          throws ServletException, IOException {
 
-    Long uid = SessionUtil.currentUserId(req);
-    EntityManager em = JPAConfig.getEntityManager();
-    EntityTransaction tx = em.getTransaction();
-
-    try {
-      User vendorRef = em.getReference(User.class, uid);
-      Shop shop = em.createQuery(
-              "SELECT s FROM Shop s WHERE s.vendor = :vendor", Shop.class)
-          .setParameter("vendor", vendorRef)
-          .getSingleResult();
-
-      String name = req.getParameter("shopName");
-      String desc = req.getParameter("description");
-      if (name != null) shop.setShopName(name.trim());
-      if (desc != null) shop.setDescription(desc.trim());
-
-      // Logo
-      Part logo = req.getPart("logo");
-      if (logo != null && logo.getSize() > 0 && isImage(logo)) {
-        String url = uploadToCloudinary(logo);
-        shop.setLogoUrl(url); // Không xoá ảnh cũ trên Cloudinary
+      // ✅ Ưu tiên lấy userId từ JWT (AuthFilter đã gắn sẵn)
+      Long uid = (Long) req.getAttribute("uid");
+      if (uid == null) uid = SessionUtil.currentUserId(req);
+      if (uid == null) {
+          resp.sendRedirect(req.getContextPath() + "/login");
+          return;
       }
 
-      // Cover
-      Part cover = req.getPart("cover");
-      if (cover != null && cover.getSize() > 0 && isImage(cover)) {
-        String url = uploadToCloudinary(cover);
-        shop.setCoverUrl(url); // Yêu cầu đã thêm field coverUrl trong Shop
+      EntityManager em = JPAConfig.getEntityManager();
+      EntityTransaction tx = em.getTransaction();
+
+      try {
+          // Kiểm tra vendor đã có shop chưa
+          User vendorRef = em.getReference(User.class, uid);
+          Shop shop = null;
+          try {
+              shop = em.createQuery(
+                      "SELECT s FROM Shop s WHERE s.vendor = :vendor", Shop.class)
+                      .setParameter("vendor", vendorRef)
+                      .getSingleResult();
+          } catch (NoResultException ignore) {}
+
+          // --- Nếu CHƯA có shop => tạo mới ---
+          if (shop == null) {
+              String name = req.getParameter("shopName");
+              String desc = req.getParameter("description");
+
+              if (name == null || name.trim().length() < 3) {
+                  req.getSession(true).setAttribute("flashErrors",
+                          java.util.List.of("Tên shop phải từ 3 ký tự trở lên"));
+                  resp.sendRedirect(req.getContextPath() + "/vendor/shop/create");
+                  return;
+              }
+
+              shop = new Shop();
+              shop.setShopName(name.trim());
+              shop.setDescription(desc != null ? desc.trim() : "");
+              shop.setVendor(vendorRef);
+              shop.setStatus(vn.iotstar.entities.Shop.ShopStatus.ACTIVE);
+
+              // --- Upload logo & cover (nếu có) ---
+              Part logo = req.getPart("logo");
+              if (logo != null && logo.getSize() > 0 && isImage(logo)) {
+                  shop.setLogoUrl(uploadToCloudinary(logo));
+              }
+
+              Part cover = req.getPart("cover");
+              if (cover != null && cover.getSize() > 0 && isImage(cover)) {
+                  shop.setCoverUrl(uploadToCloudinary(cover));
+              }
+
+              // Default placeholder nếu rỗng
+              if (shop.getLogoUrl() == null || shop.getLogoUrl().isEmpty())
+                  shop.setLogoUrl("/assets/img/placeholder.png");
+              if (shop.getCoverUrl() == null || shop.getCoverUrl().isEmpty())
+                  shop.setCoverUrl("/assets/img/placeholder-cover.jpg");
+
+              tx.begin();
+              em.persist(shop);
+              tx.commit();
+
+              resp.sendRedirect(req.getContextPath() + "/vendor/shop");
+              return;
+          }
+
+          // --- Nếu ĐÃ có shop => cập nhật ---
+          String name = req.getParameter("shopName");
+          String desc = req.getParameter("description");
+          if (name != null) shop.setShopName(name.trim());
+          if (desc != null) shop.setDescription(desc.trim());
+
+          Part logo = req.getPart("logo");
+          if (logo != null && logo.getSize() > 0 && isImage(logo)) {
+              shop.setLogoUrl(uploadToCloudinary(logo));
+          }
+
+          Part cover = req.getPart("cover");
+          if (cover != null && cover.getSize() > 0 && isImage(cover)) {
+              shop.setCoverUrl(uploadToCloudinary(cover));
+          }
+
+          tx.begin();
+          em.merge(shop);
+          tx.commit();
+
+          resp.sendRedirect(req.getContextPath() + "/vendor/shop");
+      } catch (Exception e) {
+          if (tx.isActive()) tx.rollback();
+          throw new ServletException(e);
+      } finally {
+          em.close();
       }
-
-      tx.begin();
-      em.merge(shop);
-      tx.commit();
-
-      resp.sendRedirect(req.getContextPath() + "/vendor/shop");
-    } catch (NoResultException e) {
-      if (tx.isActive()) tx.rollback();
-      resp.sendRedirect(req.getContextPath() + "/vendor/shop/create");
-    } catch (Exception e) {
-      if (tx.isActive()) tx.rollback();
-      throw new ServletException(e);
-    } finally {
-      em.close();
-    }
   }
+
 
   // --- helpers ---
   private boolean isImage(Part part) {

@@ -22,36 +22,45 @@
 <c:set var="ctx" value="${pageContext.request.contextPath}" />
 
 <%-- ĐÃ THÊM: class "main-vendor-shop-create" để "ăn" nền pastel --%>
-<main class="container py-4 main-vendor-shop-create">
-  
-  <%-- ĐÃ THÊM: class "gradient-text" (từ v1) cho "cháy" --%>
-  <h2 class="mb-3 gradient-text" style="font-weight: 700;">Tạo cửa hàng</h2>
+<%-- ... (Phần đầu file giữ nguyên) ... --%>
 
-  <%-- 
-    ĐÃ NÂNG CẤP: Bọc form vào "form-card-pink"
-    Class này sẽ được "refactor" (tái cấu trúc) trong web2.css
-    để dùng chung cho mọi trang form (Thêm SP, Thuộc tính, Tạo shop)
-  --%>
-  <div class="card shadow-sm form-card-pink">
-    <div class="card-body">
-      <h5 class="card-title mb-3" style="font-weight: 600;">Thông tin cơ bản</h5>
-      
-      <%-- ĐÃ XÓA: class="card p-3 shadow-sm" (vì đã bọc bên ngoài) --%>
-      <form method="post">
+<main class="container py-4 main-vendor-shop-create">
+  
+  <h2 class="mb-3 gradient-text" style="font-weight: 700;">Tạo cửa hàng</h2>
+
+  <div class="card shadow-sm form-card-pink">
+    <div class="card-body">
+      <h5 class="card-title mb-3" style="font-weight: 600;">Thông tin cơ bản</h5>
+      
+      <%-- 
+        ✅ SỬA LỖI: Thêm enctype="multipart/form-data" 
+        để form có thể gửi file lên servlet
+      --%>
+      <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label">Tên cửa hàng</label>
+          <input name="shopName" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mô tả</label>
+          <textarea name="description" class="form-control" rows="3"></textarea>
+        </div>
+
+        <%-- 
+          ✅ BỔ SUNG: Thêm 2 trường input file 
+          mà servlet đang chờ xử lý
+        --%>
         <div class="mb-3">
-          <label class="form-label">Tên cửa hàng</label>
-          <%-- Input này sẽ tự "ăn" style nền mờ từ card --%>
-          <input name="shopName" class="form-control" required>
+          <label for="logo" class="form-label">Logo (ảnh vuông)</label>
+          <input class="form-control" type="file" id="logo" name="logo" accept="image/*">
         </div>
         <div class="mb-3">
-          <label class="form-label">Mô tả</label>
-          <%-- Textarea này cũng sẽ tự "ăn" style nền mờ --%>
-          <textarea name="description" class="form-control" rows="3"></textarea>
+          <label for="cover" class="form-label">Ảnh bìa (ảnh ngang)</label>
+          <input class="form-control" type="file" id="cover" name="cover" accept="image/*">
         </div>
-        
-        <%-- Nút này sẽ tự "ăn" style hồng "cháy" và "pulse" --%>
-        <button class="btn btn-primary">Tạo shop</button>
-      </form>
-    </div>
-  </div>
+        
+        <button class="btn btn-primary">Tạo shop</button>
+      </form>
+    </div>
+  </div>
 </main>
