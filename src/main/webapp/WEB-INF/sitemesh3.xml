@@ -2,6 +2,7 @@
 <sitemesh>
   <mapping path="/*" decorator="web.jsp"/>
   <mapping path="/admin/*" decorator="layout-admin.jsp"/>
+  <mapping path="/shipper/*" decorator="layout-shipper.jsp"/>
 
   <exclusion path="/favorite/*"/>
 </sitemesh>

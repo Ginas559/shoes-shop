@@ -9,8 +9,10 @@ import vn.iotstar.entities.Shop;
 
 public interface IOrderDao {
 
-	List<Order> searchOrders(OrderStatus status, Shop shop, Category category, int page, int pageSize);
+	List<Order> searchOrders(OrderStatus status, Shop shop, int page, int pageSize);
 
-	int countOrders(OrderStatus status, Shop shop, Category category);
+	int countOrders(OrderStatus status, Shop shop);
+
+	Order findById(Long id);
 
 }

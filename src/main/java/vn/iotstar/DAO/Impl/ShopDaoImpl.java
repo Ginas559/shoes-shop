@@ -125,7 +125,7 @@ public class ShopDaoImpl implements IShopDao {
 	@Override
 	public Shop findById(Long id) {
 		EntityManager em = JPAConfig.getEntityManager();
-		String jpql = "select s from Shop s where s.shopId= :id";
+		String jpql = "select s from Shop s JOIN FETCH s.vendor where s.shopId= :id";
 		TypedQuery<Shop> query = em.createQuery(jpql, Shop.class);
 		
 		query.setParameter("id", id);
@@ -135,7 +135,7 @@ public class ShopDaoImpl implements IShopDao {
 	@Override
 	public List<Shop> findAllShopsValidate(){
 		EntityManager em = JPAConfig.getEntityManager();
-		String jpql = "select s from Shop s where s.status= :id";
+		String jpql = "select s from Shop s JOIN FETCH s.vendor where s.status= :id";
 		TypedQuery<Shop> query = em.createQuery(jpql, Shop.class);
 		
 		query.setParameter("id", ShopStatus.ACTIVE);

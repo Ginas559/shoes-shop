@@ -34,7 +34,18 @@ public class ProductDaoImpl implements IProductDao {
 
 	@Override
 	public void edit(Product product) {
-		// TODO Auto-generated method stub
+		EntityManager em = JPAConfig.getEntityManager();
+	    EntityTransaction tx = em.getTransaction();
+	    try {
+	        tx.begin();
+	        em.merge(product); 
+	        tx.commit();
+	    } catch (Exception e) {
+	        if (tx.isActive()) tx.rollback();
+	        e.printStackTrace();
+	    } finally {
+	        em.close();
+	    }
 
 	}
 
@@ -93,7 +104,7 @@ public class ProductDaoImpl implements IProductDao {
 	public List<Product> searchProducts(String keyword, Boolean isBanned, Shop shop, Category category, int page, int pageSize) {
 		EntityManager em = JPAConfig.getEntityManager();
 		try {
-			String jpql = "SELECT p FROM Product p WHERE 1=1";
+			String jpql = "SELECT p FROM Product p JOIN FETCH p.category JOIN FETCH p.shop WHERE 1=1";
 			if (keyword != null && !keyword.isEmpty()) {
 				jpql += " AND (LOWER(p.productName) LIKE LOWER(:kw))";
 			}
@@ -139,7 +150,7 @@ public class ProductDaoImpl implements IProductDao {
 	@Override
 	public Product findById(Long id) {
 		EntityManager em = JPAConfig.getEntityManager();
-		String jpql = "select p from Product p where p.productId = :id";
+		String jpql = "select p from Product p JOIN FETCH p.category JOIN FETCH p.shop where p.productId = :id";
 		TypedQuery<Product> query = em.createQuery(jpql, Product.class);
 
 		query.setParameter("id", id);

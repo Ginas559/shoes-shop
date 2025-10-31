@@ -102,6 +102,8 @@ public class LoginServlet extends HttpServlet {
             resp.sendRedirect(ctx + "/admin/dashboard");
         } else if ("VENDOR".equalsIgnoreCase(role)) {
             resp.sendRedirect(ctx + "/vendor/dashboard");
+        } else if ("ShIPPER".equalsIgnoreCase(role) || "SHIPPER".equalsIgnoreCase(role)) {
+            resp.sendRedirect(ctx + "/shipper/statistics/view");
         } else {
             // USER hoặc các role khác
             resp.sendRedirect(ctx + "/");
