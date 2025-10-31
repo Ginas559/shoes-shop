@@ -1,4 +1,4 @@
-Thanh Tùng chạy deloy: https://bmtt.onrender.com/products?shopId=2
+Thanh Tùng chạy deloy: https://bmtt.onrender.com/login
 # 👟 Shoes Shop — Java Servlet/JSP E‑Commerce
 
 ![Java](https://img.shields.io/badge/Java-17%2F21%2F24-blue)
