@@ -209,10 +209,6 @@
 <%-- Modal hiển thị chi tiết --%>
 <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <%-- 
-      ĐÃ THÊM: class "modal-colorful"
-      Để CSS trong web2.css tóm lấy và tô màu
-    --%>
     <div class="modal-content modal-colorful">
       <div class="modal-header">
         <h5 class="modal-title">Chi tiết đơn hàng</h5>
@@ -224,6 +220,92 @@
     </div>
   </div>
 </div>
+
+<%-- ⭐ CSS ưu tiên cao nhất cho modal chi tiết (ghi thẳng trong JSP để override file ngoài) --%>
+<style>
+  /* Modal nền gradient */
+  .modal-colorful {
+    background: linear-gradient(145deg, #f9f9f9 0%, #ffffff 50%, #f3f6f9 100%);
+    border-radius: 12px;
+    border: 1px solid #e3e6ea;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Header modal */
+  #orderDetailModal .modal-header {
+    background: #2a4365;
+    color: #fff;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+  }
+
+  /* Nút đóng */
+  #orderDetailModal .btn-close {
+    filter: brightness(0) invert(1);
+  }
+
+  /* Body */
+  #orderDetailModal .modal-body {
+    background: #fff;
+    padding: 1.5rem;
+  }
+
+  /* Bảng chi tiết */
+  #orderDetailModal table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  #orderDetailModal th {
+    background: #edf2f7;
+    color: #2d3748;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 2px solid #cbd5e0;
+  }
+
+  #orderDetailModal td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+
+  #orderDetailModal tbody tr:hover {
+    background-color: #f7fafc;
+    transition: background 0.2s;
+  }
+
+  #orderDetailModal .text-danger {
+    color: #e53e3e !important;
+    font-weight: 700 !important;
+  }
+
+  /* Ảnh sản phẩm */
+  #orderDetailModal img {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Tổng cộng */
+  #orderDetailModal tfoot th {
+    background: #2b6cb0;
+    color: #fff;
+    text-align: right;
+    font-size: 1rem;
+    border-top: 3px solid #1a365d;
+  }
+
+  /* Hiệu ứng khi modal hiện */
+  .modal.show .modal-dialog {
+    transform: scale(1.02);
+    transition: transform 0.2s ease-out;
+  }
+</style>
+
 
 <%-- JavaScript xử lý Ajax và Modal (Giữ nguyên) --%>
 <script>

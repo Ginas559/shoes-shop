@@ -2496,3 +2496,88 @@ body:has(.main-cart) {
 		display: none;
 	}
 }
+/* ================================================================== */
+/* 59. "TUYỆT TRẦN HÓA" VENDOR PRODUCT CARD (THAY THẾ BẢNG)
+/* ================================================================== */
+
+/* 1. "ĐỘ" LẠI ẢNH (GIỐNG HÌNH MẪU) */
+.product-card-img {
+  aspect-ratio: 16 / 10; /* Tỉ lệ (rộng hơn 1:1) */
+  object-fit: cover;
+  border-bottom: 1px solid #eee;
+  /* (class "cover" đã có transition zoom từ Mục 35) */
+}
+
+/* 2. "ĐỘ" LẠI TIÊU ĐỀ (GIỐNG .fav-title - Mục 43) */
+.product-card-title {
+  font-weight: 600;
+  color: #222;
+  min-height: 2.6em; 
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Chỉ 2 dòng */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+/* Hiệu ứng "gradient text" khi hover (tái sử dụng) */
+.card-3d-hover:hover .product-card-title {
+  background: linear-gradient(-45deg, #e73c7e, #23a6d5);
+  background-size: 200% 200%;
+  animation: gradient-animation 8s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* 3. "ĐỘ" FOOTER NÚT BẤM (GIỐNG HÌNH MẪU) */
+.product-actions-footer {
+  background-color: #f8f9fa; /* Nền xám nhạt */
+  border-top: 1px solid #eee;
+  
+  /* === "MA THUẬT" ẨN/HIỆN 11/10 === */
+  opacity: 0; /* Ẩn đi */
+  height: 0; /* Biến mất */
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+/* HIỆN FOOTER KHI HOVER CARD "TUYỆT TRẦN" */
+.card-3d-hover:hover .product-actions-footer {
+  opacity: 1;
+  height: auto; /* Hiện ra */
+  padding: 0.75rem !important; /* Trả lại padding */
+}
+
+/* 4. Chia lưới các nút (Sửa, Biến thể,...) */
+.product-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Chia 2 cột */
+  gap: 0.5rem; /* Khoảng cách */
+}
+/* (CSS .product-actions .btn... đã có (Mục 24) sẽ tự "nhuộm" màu 4 nút này) */
+/* (CSS .product-actions-grid kế thừa .product-actions từ file .jsp) */
+/* Ghi đè lại (nếu cần) */
+.product-actions-grid .btn {
+	width: 100%; /* Cho nút full 2 cột */
+}
+
+
+/* ================================================================== */
+/* 60. HIỆU ỨNG TẢI TRANG "NỐI ĐUÔI" (CHO TRANG VENDOR/PRODUCTS)
+/* ================================================================== */
+
+/* (Dùng lại .product-card-animation từ Mục 36) */
+/* Hiệu ứng nối đuôi (Stagger) */
+.main-products .row .col:nth-child(1) .product-card-animation { animation-delay: 0.1s; }
+.main-products .row .col:nth-child(2) .product-card-animation { animation-delay: 0.15s; }
+.main-products .row .col:nth-child(3) .product-card-animation { animation-delay: 0.2s; }
+.main-products .row .col:nth-child(4) .product-card-animation { animation-delay: 0.25s; }
+.main-products .row .col:nth-child(5) .product-card-animation { animation-delay: 0.3s; }
+.main-products .row .col:nth-child(6) .product-card-animation { animation-delay: 0.35s; }
+.main-products .row .col:nth-child(7) .product-card-animation { animation-delay: 0.4s; }
+.main-products .row .col:nth-child(8) .product-card-animation { animation-delay: 0.45s; }
+.main-products .row .col:nth-child(9) .product-card-animation { animation-delay: 0.5s; }
+.main-products .row .col:nth-child(10) .product-card-animation { animation-delay: 0.55s; }
