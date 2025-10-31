@@ -40,6 +40,7 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\Ven
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorDashboardServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorOrderServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorProductServlet.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorSaleServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorShopServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorStaffServlet.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\controllers\vendor\VendorStatisticServlet.java
@@ -114,6 +115,7 @@ D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\OrderService.
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\OtpService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductBrowseService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductImageService.java
+D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductSaleService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ProductVariantService.java
 D:\DoAn\LTW\bao_admin\shoes-shop\src\main\java\vn\iotstar\services\ReviewService.java

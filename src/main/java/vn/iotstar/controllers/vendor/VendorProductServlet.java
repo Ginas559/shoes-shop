@@ -19,6 +19,7 @@ import vn.iotstar.entities.Shop;
 import vn.iotstar.entities.User;
 import vn.iotstar.services.CategoryService;
 import vn.iotstar.services.ProductImageService;
+import vn.iotstar.services.ProductSaleService;
 import vn.iotstar.services.ProductService;
 import vn.iotstar.services.StatisticService;
 import vn.iotstar.utils.SessionUtil;
@@ -33,6 +34,8 @@ public class VendorProductServlet extends HttpServlet {
     private final ProductImageService productImageService = new ProductImageService();
     private final StatisticService helper = new StatisticService();
     private final ProductVariantService variantService = new ProductVariantService();
+    private final ProductSaleService saleService = new vn.iotstar.services.ProductSaleService();
+
     
     /**
      * Lưu ý JWT:
@@ -98,7 +101,7 @@ public class VendorProductServlet extends HttpServlet {
         }
         req.setAttribute("shop", shop);
 
-        // Lấy lỗi đã lưu vào session (nếu có) để hiển thị một lần
+        // Flash errors (nếu có)
         HttpSession session = req.getSession(false);
         if (session != null && session.getAttribute("flashErrors") != null) {
             @SuppressWarnings("unchecked")
@@ -114,6 +117,7 @@ public class VendorProductServlet extends HttpServlet {
             Long categoryId = parseLongOrNull(req.getParameter("categoryId"));
             Product.ProductStatus status = parseStatusOrNull(req.getParameter("status"));
 
+            // Page sản phẩm như cũ
             ProductService.PageResult<Product> pr = productService.findByShopPaged(
                     shop.getShopId(), page, size, q, categoryId, status);
 
@@ -126,22 +130,56 @@ public class VendorProductServlet extends HttpServlet {
             req.setAttribute("status", status != null ? status.name() : "");
             req.setAttribute("categories", categoryService.findAll());
 
+            // Ảnh thumbnail
             Map<Long, String> thumbnails = new HashMap<>();
             for (Product p : pr.items) {
                 thumbnails.put(p.getProductId(), productImageService.getThumbnailUrl(p.getProductId()));
             }
             req.setAttribute("thumbnails", thumbnails);
 
-            // NEW: tổng tồn từ các biến thể (SUM stock), nếu chưa có biến thể => 0
+            // Tổng tồn (biến thể) + fallback product.stock
             Map<Long, Integer> stocks = new HashMap<>();
             for (Product p : pr.items) {
                 int sum = variantService.sumStockByProductId(p.getProductId());
-                // fallback: nếu chưa có variant, dùng product.stock (giữ tương thích dữ liệu cũ)
                 if (sum == 0 && p.getStock() != null) sum = p.getStock();
                 stocks.put(p.getProductId(), sum);
             }
             req.setAttribute("stocks", stocks);
-            
+
+            // ====== NEW: Map khuyến mãi đang hiệu lực + giá đã giảm ======
+            // Thu thập productIds trong trang hiện tại
+            List<Long> pids = new ArrayList<>();
+            for (Product p : pr.items) pids.add(p.getProductId());
+
+            // Gọi service khuyến mãi (bạn đã tạo ở bước 1)
+            vn.iotstar.services.ProductSaleService saleService =
+                    new vn.iotstar.services.ProductSaleService();
+
+            // Lấy sale đang ACTIVE theo danh sách productIds
+            Map<Long, vn.iotstar.services.ProductSaleService.SaleVM> saleMap =
+                    saleService.activeByProductIds(pids);
+
+            // Chuẩn bị các map đẩy sang JSP
+            Map<Long, java.math.BigDecimal> salePercent = new HashMap<>();
+            Map<Long, java.time.LocalDate>  saleEndDate = new HashMap<>();
+            Map<Long, java.math.BigDecimal> discountedPrice = new HashMap<>();
+
+            for (Product p : pr.items) {
+                var s = saleMap.get(p.getProductId());
+                if (s != null && p.getPrice() != null) {
+                    salePercent.put(p.getProductId(), s.percent);   // ví dụ 10.00 nghĩa là -10%
+                    saleEndDate.put(p.getProductId(), s.endDate);   // ngày kết thúc
+                    // Tính giá đã giảm: price * (100 - percent) / 100
+                    discountedPrice.put(p.getProductId(), saleService.discounted(p.getPrice(), s.percent));
+                }
+            }
+
+            // Đẩy sang JSP (để hiển thị badge “-10%” và giá gạch/giá sau giảm)
+            req.setAttribute("salePercent", salePercent);
+            req.setAttribute("saleEndDate", saleEndDate);
+            req.setAttribute("discountedPrice", discountedPrice);
+            // ====== /NEW ======
+
             req.getRequestDispatcher("/WEB-INF/views/vendor/products.jsp").forward(req, resp);
             return;
         }
@@ -164,6 +202,7 @@ public class VendorProductServlet extends HttpServlet {
 
         resp.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
+
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)

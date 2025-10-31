@@ -52,6 +52,7 @@ vn\iotstar\entities\ProductComment$ProductCommentBuilder.class
 vn\iotstar\entities\ChatMessage.class
 vn\iotstar\controllers\admin\CategoryController.class
 vn\iotstar\repositories\UserOtpRepository.class
+vn\iotstar\services\ProductSaleService$SaleVM.class
 vn\iotstar\DAO\Impl\CouponDaoImpl.class
 vn\iotstar\DAO\IAdminDashboardDao.class
 vn\iotstar\entities\Promotion$PromotionStatus.class
@@ -135,9 +136,11 @@ vn\iotstar\services\ProductVariantService.class
 vn\iotstar\configs\Test.class
 vn\iotstar\entities\Payment$PaymentBuilder.class
 vn\iotstar\controllers\auth\ResetPasswordServlet.class
+vn\iotstar\controllers\vendor\VendorSaleServlet.class
 vn\iotstar\services\ReviewService$Stats.class
 vn\iotstar\controllers\admin\DashboardController.class
 vn\iotstar\services\CommentService.class
+vn\iotstar\services\ProductSaleService.class
 vn\iotstar\services\ShopFeaturedService.class
 vn\iotstar\services\ProductBrowseService$ShopOptionVM.class
 vn\iotstar\controllers\review\ReviewServlet.class
